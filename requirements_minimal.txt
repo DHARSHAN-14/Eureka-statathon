@@ -1,0 +1,17 @@
+# Core dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# ML & NLP (essential)
+transformers>=4.30.0
+sentence-transformers>=2.2.0
+torch>=2.0.0
+
+# Data & Search
+faiss-cpu>=1.7.0
+pandas>=1.5.0
+networkx>=3.0
+
+# Utilities
+python-multipart>=0.0.6

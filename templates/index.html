@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>National Classification of Occupations</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='gov-style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-main">
+        <div class="logo-container">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg"
+            alt="Emblem of India"
+            class="logo"
+          />
+          <div class="logo-text">
+            <span class="main-title"
+              >Directorate General of Employment (DGE) | GoI | India</span
+            >
+            <span class="sub-title">श्रम एवं रोजगार मंत्रालय</span>
+            <span class="sub-title">Ministry of Labour and Employment</span>
+          </div>
+        </div>
+        <div class="header-logos-right">
+          <img
+            src="https://gc.mic.gov.in/statathon-2025.png"
+            alt="Statathon Logo"
+            class="g20-logo"
+          />
+          <!-- Other logos can be added here -->
+        </div>
+      </div>
+      <nav class="main-nav">
+        <ul class="nav-list">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Acts and Rules</a></li>
+          <li><a href="#">Citizen Corner</a></li>
+          <li><a href="#">Schemes & Activities</a></li>
+          <li><a href="#">Division</a></li>
+          <li><a href="#">Documents & Publications</a></li>
+          <li><a href="#">National Classification of Occupations</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <div class="container">
+      <main>
+        <h1>National Classification of Occupations</h1>
+        <div class="search-container">
+          <div class="search-form">
+            <div class="modern-search-container">
+              <div class="modern-search-bar">
+                <textarea
+                  id="occupationSearch"
+                  placeholder="Search by Occupation... (Enter to search, Shift+Enter for new line)"
+                  rows="1"
+                ></textarea>
+                <button id="micBtn" class="mic-button" title="Voice Search">
+                  <i class="fas fa-microphone"></i>
+                </button>
+                <div class="translation-wrapper">
+                  <button
+                    id="translationBtn"
+                    class="translation-button"
+                    title="Select language"
+                  >
+                    <i class="fas fa-language"></i>
+                  </button>
+                  <select
+                    id="languageSelect"
+                    class="language-select-hidden"
+                    title="Language selection"
+                  >
+                    <option value="en-US">English (US)</option>
+                    <option value="en-IN">English (India)</option>
+                    <option value="hi-IN">Hindi</option>
+                    <option value="ta-IN">Tamil</option>
+                    <option value="te-IN">Telugu</option>
+                    <option value="bn-IN">Bengali</option>
+                    <option value="mr-IN">Marathi</option>
+                    <option value="gu-IN">Gujarati</option>
+                    <option value="kn-IN">Kannada</option>
+                    <option value="ml-IN">Malayalam</option>
+                    <option value="pa-IN">Punjabi</option>
+                    <option value="ur-IN">Urdu</option>
+                  </select>
+                </div>
+              </div>
+              <div id="ncoCodeInput" class="nco-code-input hidden" aria-label="NCO code input">
+                <div class="nco-code-group">
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 1" />
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 2" />
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 3" />
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 4" />
+                </div>
+                <span class="nco-code-dot">.</span>
+                <div class="nco-code-group">
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 5" />
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 6" />
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 7" />
+                  <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 8" />
+                </div>
+              </div>
+              <button id="applyBtn" class="search-button" type="submit">
+                Search
+              </button>
+            </div>
+            <div class="search-mode-row">
+              <div class="search-mode-toggle">
+              <label class="search-mode-option">
+                <input
+                  type="radio"
+                  name="searchMode"
+                  id="searchModeGeneral"
+                  value="general"
+                  checked
+                />
+                <span>General Search</span>
+              </label>
+              <label class="search-mode-option">
+                <input
+                  type="radio"
+                  name="searchMode"
+                  id="searchModeNco"
+                  value="nco"
+                />
+                <span>NCO Code Search</span>
+              </label>
+            </div>
+            <label class="top-k-control">
+              <span>Top results</span>
+              <select id="topKSelect" title="Number of results to return">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </label>
+            </div>
+          </div>
+          <div id="transcriptionPreview" class="transcription-preview"></div>
+          <div id="suggestionBox" class="suggestion-box hidden"></div>
+          <div id="pigsBox" class="suggestion-box hidden"></div>
+        </div>
+
+        <div id="searchStatus" class="search-status hidden">
+          <div class="spinner"></div>
+          <span>Thinking...</span>
+        </div>
+        <div id="translationNotice" class="translation-notice hidden">
+          <div class="translation-content">
+            <i class="fas fa-globe"></i>
+            <span id="translationText"></span>
+          </div>
+        </div>
+        <div
+          id="languageAmbiguityDialog"
+          class="language-ambiguity-dialog hidden"
+        >
+          <div class="ambiguity-overlay"></div>
+          <div class="ambiguity-content">
+            <h3>Language Detection</h3>
+            <p id="ambiguityMessage"></p>
+            <div class="ambiguity-buttons">
+              <button
+                class="ambiguity-btn primary"
+                id="ambiguityPrimaryBtn"
+              ></button>
+              <button
+                class="ambiguity-btn secondary"
+                id="ambiguitySecondaryBtn"
+              ></button>
+            </div>
+          </div>
+        </div>
+        <div class="results-container" id="resultsContainer">
+          <div class="results-header">
+            <h2 id="resultsTitle">Search Results</h2>
+            <span id="resultsCount" class="results-count"></span>
+          </div>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Job Name</th>
+                <th>NCO 2015</th>
+                <th>Match Level</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody">
+              <!-- Results will be dynamically inserted here -->
+            </tbody>
+          </table>
+          <div class="show-more-container">
+            <button id="showMoreBtn" class="btn-secondary hidden">
+              Show More
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      const occupationSearch = document.getElementById("occupationSearch");
+      const ncoCodeInput = document.getElementById("ncoCodeInput");
+      const ncoDigits = Array.from(document.querySelectorAll(".nco-digit"));
+      const resultsBody = document.getElementById("resultsBody");
+      const resultsTableHead = document.querySelector(".results-table thead");
+      const showMoreBtn = document.getElementById("showMoreBtn");
+      const searchStatus = document.getElementById("searchStatus");
+      const micBtn = document.getElementById("micBtn");
+      const languageSelect = document.getElementById("languageSelect");
+      const topKSelect = document.getElementById("topKSelect");
+      const transcriptionPreview = document.getElementById(
+        "transcriptionPreview"
+      );
+      const suggestionBox = document.getElementById("suggestionBox");
+      const pigsBox = document.getElementById("pigsBox");
+
+      let allResults = [];
+      let displayedCount = 0;
+      let lastRequestedTopK = 5;
+      let lastReturnedCount = 0;
+      let directoryMode = false;
+      const directoryRowsPerPage = 40;
+
+      // --- Progress Bar Functions ---
+      function getProgressStage(score) {
+        if (score >= 0.9) return 5; // Very High Match (90-100%)
+        if (score >= 0.7) return 4; // High Match (70-89%)
+        if (score >= 0.5) return 3; // Medium Match (50-69%)
+        if (score >= 0.3) return 2; // Low Match (30-49%)
+        return 1; // Very Low Match (0-29%)
+      }
+
+      function createSignalIcon(stage) {
+        return `
+          <div class="signal-strength stage-${stage}">
+            <div class="signal-bar signal-bar-1"></div>
+            <div class="signal-bar signal-bar-2"></div>
+            <div class="signal-bar signal-bar-3"></div>
+            <div class="signal-bar signal-bar-4"></div>
+            <div class="signal-bar signal-bar-5"></div>
+          </div>
+        `;
+      }
+
+      // --- Event Listeners ---
+      document
+        .getElementById("applyBtn")
+        .addEventListener("click", () => performSearch(false));
+      occupationSearch.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          performSearch(false);
+        }
+      });
+
+      // Auto-expand textarea only when there are newlines
+      function autoExpand() {
+        const lines = occupationSearch.value.split("\n").length;
+        const newRows = Math.max(1, Math.min(lines, 4));
+        occupationSearch.rows = newRows;
+      }
+      occupationSearch.addEventListener("input", autoExpand);
+      showMoreBtn.addEventListener("click", () => displayResults(true));
+
+      let currentQuery = "";
+      let selectedLanguage = null;
+      let searchMode = "general";
+
+      function getTopK() {
+        const value = Number.parseInt(topKSelect.value, 10);
+        return Number.isFinite(value) ? value : 5;
+      }
+
+      function setSearchTableHeader() {
+        resultsTableHead.innerHTML = `
+          <tr>
+            <th>Rank</th>
+            <th>Job Name</th>
+            <th>NCO 2015</th>
+            <th>Match Level</th>
+            <th>Action</th>
+          </tr>
+        `;
+      }
+
+      function setDirectoryTableHeader() {
+        resultsTableHead.innerHTML = `
+          <tr>
+            <th>S.No</th>
+            <th>Occupational Title</th>
+            <th>NCO 2015</th>
+            <th>NCO 2004</th>
+            <th>Division</th>
+            <th>Sub-Division</th>
+            <th>Group</th>
+            <th>Family</th>
+          </tr>
+        `;
+      }
+
+      async function loadDirectory() {
+        directoryMode = true;
+        searchStatus.classList.remove("hidden");
+        document.getElementById("translationNotice").classList.add("hidden");
+        suggestionBox.classList.add("hidden");
+        pigsBox.classList.add("hidden");
+        showMoreBtn.classList.add("hidden");
+
+        try {
+          const response = await fetch("/api/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: "", search_mode: "general" }),
+          });
+          const data = await response.json();
+          allResults = data.results || [];
+          lastReturnedCount = data.returned_count || allResults.length;
+          displayedCount = 0;
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          displayResults(false);
+        } catch (error) {
+          console.error("Directory load error:", error);
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          setDirectoryTableHeader();
+          document.getElementById("resultsTitle").textContent =
+            "National Classification of Occupations";
+          document.getElementById("resultsCount").textContent = "";
+          resultsBody.innerHTML =
+            '<tr><td colspan="8">Unable to load occupation directory.</td></tr>';
+        }
+      }
+
+      topKSelect.addEventListener("change", () => {
+        if (getActiveQuery().trim()) {
+          performSearch(false);
+        }
+      });
+
+      function getNcoCodeFromBoxes() {
+        const digits = ncoDigits.map((input) => input.value).join("");
+        if (!digits) return "";
+        return `${digits.slice(0, 4)}.${digits.slice(4, 8)}`;
+      }
+
+      function setNcoCodeBoxes(value) {
+        const digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+        ncoDigits.forEach((input, index) => {
+          input.value = digits[index] || "";
+        });
+      }
+
+      function getActiveQuery() {
+        return searchMode === "nco"
+          ? getNcoCodeFromBoxes()
+          : occupationSearch.value;
+      }
+
+      function updateSearchModeUI() {
+        const isNco = searchMode === "nco";
+        document.querySelector(".modern-search-bar").classList.toggle("hidden", isNco);
+        ncoCodeInput.classList.toggle("hidden", !isNco);
+        topKSelect.closest(".top-k-control").classList.toggle("hidden", isNco);
+        if (isNco) {
+          setNcoCodeBoxes(occupationSearch.value);
+          setTimeout(() => ncoDigits[0].focus(), 0);
+        } else {
+          occupationSearch.focus();
+        }
+      }
+
+      ncoDigits.forEach((input, index) => {
+        input.addEventListener("input", (event) => {
+          const digits = event.target.value.replace(/\D/g, "");
+          event.target.value = digits.slice(-1);
+          if (digits && index < ncoDigits.length - 1) {
+            ncoDigits[index + 1].focus();
+          }
+        });
+
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Backspace" && !input.value && index > 0) {
+            ncoDigits[index - 1].focus();
+          }
+          if (event.key === "Enter") {
+            event.preventDefault();
+            performSearch(false);
+          }
+        });
+
+        input.addEventListener("paste", (event) => {
+          event.preventDefault();
+          const pasted = event.clipboardData.getData("text");
+          setNcoCodeBoxes(pasted);
+          const nextEmpty = ncoDigits.find((digit) => !digit.value);
+          (nextEmpty || ncoDigits[ncoDigits.length - 1]).focus();
+        });
+      });
+
+      document.querySelectorAll('input[name="searchMode"]').forEach((el) => {
+        el.addEventListener("change", (e) => {
+          searchMode = e.target.value;
+          if (searchMode === "nco") {
+            occupationSearch.placeholder =
+              "Search by NCO code... (e.g., 1234.5678)";
+          } else {
+            occupationSearch.placeholder =
+              "Search by Occupation... (Enter to search, Shift+Enter for new line)";
+          }
+          updateSearchModeUI();
+        });
+      });
+
+      // --- Language Ambiguity Handler ---
+      function showLanguageAmbiguityDialog(ambiguity) {
+        const dialog = document.getElementById("languageAmbiguityDialog");
+        const message = document.getElementById("ambiguityMessage");
+        const primaryBtn = document.getElementById("ambiguityPrimaryBtn");
+        const secondaryBtn = document.getElementById("ambiguitySecondaryBtn");
+
+        const langNames = {
+          en: "English",
+          hi: "Hindi",
+          ta: "Tamil",
+          te: "Telugu",
+          kn: "Kannada",
+          ml: "Malayalam",
+          bn: "Bengali",
+          pa: "Punjabi",
+          gu: "Gujarati",
+          mr: "Marathi",
+          ur: "Urdu",
+        };
+
+        message.textContent = `Is this ${
+          langNames[ambiguity.primary_lang] || ambiguity.primary_lang
+        } or ${
+          langNames[ambiguity.alternative_lang] || ambiguity.alternative_lang
+        }?`;
+        primaryBtn.textContent =
+          langNames[ambiguity.primary_lang] || ambiguity.primary_lang;
+        secondaryBtn.textContent =
+          langNames[ambiguity.alternative_lang] || ambiguity.alternative_lang;
+
+        primaryBtn.onclick = () => {
+          selectedLanguage = ambiguity.primary_lang;
+          dialog.classList.add("hidden");
+          performSearchWithLanguage(currentQuery, selectedLanguage);
+        };
+
+        secondaryBtn.onclick = () => {
+          selectedLanguage = ambiguity.alternative_lang;
+          dialog.classList.add("hidden");
+          performSearchWithLanguage(currentQuery, selectedLanguage);
+        };
+
+        dialog.classList.remove("hidden");
+      }
+
+      async function performSearchWithLanguage(query, userLanguage) {
+        // Show status and hide results
+        searchStatus.classList.remove("hidden");
+        document.getElementById("resultsContainer").classList.add("hidden");
+        document.getElementById("translationNotice").classList.add("hidden");
+        showMoreBtn.classList.add("hidden");
+        pigsBox.classList.add("hidden");
+
+        try {
+          const requestedTopK = getTopK();
+          const fetchPromise = fetch(`/api/search?top_k=${requestedTopK}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: searchMode === "nco" ? formatNcoCode(query) : query,
+              user_language: userLanguage,
+              search_mode: searchMode,
+              top_k: requestedTopK,
+            }),
+          }).then((res) => res.json());
+
+          const delayPromise = new Promise((resolve) =>
+            setTimeout(resolve, 1000)
+          );
+
+          // Wait for both the fetch and the delay
+          const [data] = await Promise.all([fetchPromise, delayPromise]);
+
+          // Hide status and show results
+          searchStatus.classList.add("hidden");
+          document
+            .getElementById("resultsContainer")
+            .classList.remove("hidden");
+
+          // Show translation notice if translation occurred
+          if (data.translation_notice && searchMode !== "nco") {
+            const notice = data.translation_notice;
+            const translationText = document.getElementById("translationText");
+            translationText.innerHTML = `<strong>Translated:</strong> "${notice.original}" → "${notice.translated}"`;
+            document
+              .getElementById("translationNotice")
+              .classList.remove("hidden");
+          }
+
+          // Handle suggestions
+          if (data.suggestion) {
+            suggestionBox.innerHTML = `<strong>Search Help</strong><br>${data.suggestion}`;
+            suggestionBox.classList.remove("hidden");
+          } else {
+            suggestionBox.classList.add("hidden");
+          }
+
+          // --- PIGS: Prompt Intelligence & Guidance System ---
+          if (data.pigs && data.pigs.suggestions && data.pigs.suggestions.length > 0) {
+            let pigsHtml = `<strong>Prompt Intelligence & Guidance System</strong><br>`;
+            if (data.pigs.prompt_examples && data.pigs.prompt_examples.length > 0) {
+              pigsHtml += `<div style="margin-top:8px;"><strong>Related prompt examples:</strong></div>`;
+              pigsHtml += `<ul style="margin-top:6px; padding-left:18px;">`;
+              data.pigs.prompt_examples.forEach((prompt) => {
+                pigsHtml += `<li>"${prompt}"</li>`;
+              });
+              pigsHtml += `</ul>`;
+            }
+            pigsHtml += `<div style="margin-top:8px;"><strong>Why these results:</strong></div>`;
+            pigsHtml += `<ul style="margin-top:8px; padding-left:18px;">`;
+            data.pigs.suggestions.forEach((s) => {
+              pigsHtml += `<li>${s}</li>`;
+            });
+            pigsHtml += `</ul>`;
+
+            pigsBox.innerHTML = pigsHtml;
+            pigsBox.classList.remove("hidden");
+          } else {
+            pigsBox.classList.add("hidden");
+          }
+
+          if (data.results && data.results.length > 0) {
+            allResults = data.results;
+            lastRequestedTopK = data.top_k || getTopK();
+            lastReturnedCount = data.returned_count || data.results.length;
+            displayedCount = 0;
+            displayResults(false);
+          } else {
+            allResults = [];
+            document.getElementById("resultsCount").textContent = "";
+            resultsBody.innerHTML =
+              '<tr><td colspan="5">No results found.</td></tr>';
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          searchStatus.classList.add("hidden");
+          document
+            .getElementById("resultsContainer")
+            .classList.remove("hidden");
+          resultsBody.innerHTML =
+            '<tr><td colspan="5">An error occurred.</td></tr>';
+        }
+      }
+
+      // --- Search Logic ---
+      async function performSearch(isShowMore) {
+        const query = getActiveQuery();
+        if (isShowMore) return;
+
+        if (!query.replace(/\./g, "").trim()) {
+          await loadDirectory();
+          return;
+        }
+
+        if (searchMode === "nco" && query.replace(/\D/g, "").length !== 8) {
+          allResults = [];
+          displayedCount = 0;
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          document.getElementById("resultsTitle").textContent = "Search Results";
+          document.getElementById("resultsCount").textContent = "";
+          resultsBody.innerHTML =
+            '<tr><td colspan="5">Enter all 8 digits of the NCO code.</td></tr>';
+          return;
+        }
+
+        currentQuery = query;
+        selectedLanguage = null;
+        directoryMode = false;
+
+        // Show status and hide results
+        searchStatus.classList.remove("hidden");
+        document.getElementById("resultsContainer").classList.add("hidden");
+        document.getElementById("translationNotice").classList.add("hidden");
+        document
+          .getElementById("languageAmbiguityDialog")
+          .classList.add("hidden");
+        showMoreBtn.classList.add("hidden");
+        pigsBox.classList.add("hidden");
+
+        try {
+          const requestedTopK = getTopK();
+          const fetchPromise = fetch(`/api/search?top_k=${requestedTopK}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: searchMode === "nco" ? formatNcoCode(query) : query,
+              search_mode: searchMode,
+              top_k: requestedTopK,
+            }),
+          }).then((res) => res.json());
+
+          const delayPromise = new Promise((resolve) =>
+            setTimeout(resolve, 1000)
+          );
+
+          // Wait for both the fetch and the delay
+          const [data] = await Promise.all([fetchPromise, delayPromise]);
+
+          // Check for language ambiguity first
+          if (data.language_ambiguity && data.language_ambiguity.is_ambiguous) {
+            searchStatus.classList.add("hidden");
+            showLanguageAmbiguityDialog(data.language_ambiguity);
+            // Show preview results in English while dialog is shown
+            document
+              .getElementById("resultsContainer")
+              .classList.remove("hidden");
+            if (data.results && data.results.length > 0) {
+              allResults = data.results;
+              lastRequestedTopK = data.top_k || getTopK();
+              lastReturnedCount = data.returned_count || data.results.length;
+              displayedCount = 0;
+              displayResults(false);
+            }
+            return;
+          }
+
+          // Hide status and show results
+          searchStatus.classList.add("hidden");
+          document
+            .getElementById("resultsContainer")
+            .classList.remove("hidden");
+
+          // Show translation notice if translation occurred
+          if (data.translation_notice && searchMode !== "nco") {
+            const notice = data.translation_notice;
+            const translationText = document.getElementById("translationText");
+            translationText.innerHTML = `<strong>Translated:</strong> "${notice.original}" → "${notice.translated}"`;
+            document
+              .getElementById("translationNotice")
+              .classList.remove("hidden");
+          }
+
+          // Handle suggestions
+          if (data.suggestion) {
+            suggestionBox.innerHTML = `<strong>Search Help</strong><br>${data.suggestion}`;
+            suggestionBox.classList.remove("hidden");
+          } else {
+            suggestionBox.classList.add("hidden");
+          }
+
+          // --- PIGS: Prompt Intelligence & Guidance System ---
+          if (
+            data.pigs &&
+            data.pigs.suggestions &&
+            data.pigs.suggestions.length > 0
+          ) {
+            let pigsHtml = `<strong>Prompt Intelligence & Guidance System</strong><br>`;
+            if (
+              data.pigs.prompt_examples &&
+              data.pigs.prompt_examples.length > 0
+            ) {
+              pigsHtml += `<div style="margin-top:8px;"><strong>Related prompt examples:</strong></div>`;
+              pigsHtml += `<ul style="margin-top:6px; padding-left:18px;">`;
+              data.pigs.prompt_examples.forEach((prompt) => {
+                pigsHtml += `<li>"${prompt}"</li>`;
+              });
+              pigsHtml += `</ul>`;
+            }
+            pigsHtml += `<div style="margin-top:8px;"><strong>Why these results:</strong></div>`;
+            pigsHtml += `<ul style="margin-top:8px; padding-left:18px;">`;
+            data.pigs.suggestions.forEach((s) => {
+              pigsHtml += `<li>${s}</li>`;
+            });
+            pigsHtml += `</ul>`;
+
+            pigsBox.innerHTML = pigsHtml;
+            pigsBox.classList.remove("hidden");
+          } else {
+            pigsBox.classList.add("hidden");
+          }
+
+          if (data.results && data.results.length > 0) {
+            allResults = data.results;
+            lastRequestedTopK = data.top_k || getTopK();
+            lastReturnedCount = data.returned_count || data.results.length;
+            displayedCount = 0;
+            displayResults(false);
+          } else {
+            allResults = [];
+            document.getElementById("resultsCount").textContent = "";
+            resultsBody.innerHTML =
+              '<tr><td colspan="5">No results found.</td></tr>';
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          searchStatus.classList.add("hidden");
+          document
+            .getElementById("resultsContainer")
+            .classList.remove("hidden");
+          resultsBody.innerHTML =
+            '<tr><td colspan="5">An error occurred.</td></tr>';
+        }
+      }
+
+      function displayResults(append) {
+        if (directoryMode) {
+          displayDirectoryResults(append);
+          return;
+        }
+
+        if (!append) {
+          setSearchTableHeader();
+          resultsBody.innerHTML = "";
+          displayedCount = 0;
+
+          // Update the title based on first result's family
+          if (allResults.length > 0) {
+            const firstResult = allResults[0];
+            const family = firstResult.details?.family || "Search Results";
+            document.getElementById(
+              "resultsTitle"
+            ).textContent = `Family: ${family}`;
+          } else {
+            document.getElementById("resultsTitle").textContent =
+              "Search Results";
+          }
+        }
+
+        const fragment = document.createDocumentFragment();
+        const newLimit = allResults.length;
+
+        for (
+          let i = displayedCount;
+          i < newLimit && i < allResults.length;
+          i++
+        ) {
+          const result = allResults[i];
+          const row = document.createElement("tr");
+          row.className = "clickable-row";
+          const d = result.details || {};
+          const score = result.final_score || 0;
+          const progressStage = getProgressStage(score);
+          const signalIcon = createSignalIcon(progressStage);
+
+          row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${result.occupation_title || ""}</td>
+                    <td>${formatNcoCode(result.nco_code || "")}</td>
+                    <td>${signalIcon}</td>
+                    <td><button class="btn-detail" onclick="event.stopPropagation();" style="padding: 6px 12px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Details</button></td>
+                `;
+          row.addEventListener("click", () => showDetails(result));
+          row
+            .querySelector(".btn-detail")
+            .addEventListener("click", () => showDetails(result));
+          fragment.appendChild(row);
+        }
+        resultsBody.appendChild(fragment);
+        displayedCount = newLimit;
+        document.getElementById("resultsCount").textContent =
+          allResults.length > 0
+            ? `${allResults.length} of Top ${lastRequestedTopK}`
+            : "";
+
+        if (displayedCount < allResults.length) {
+          showMoreBtn.classList.remove("hidden");
+        } else {
+          showMoreBtn.classList.add("hidden");
+        }
+      }
+
+      function displayDirectoryResults(append) {
+        if (!append) {
+          setDirectoryTableHeader();
+          resultsBody.innerHTML = "";
+          displayedCount = 0;
+          document.getElementById("resultsTitle").textContent =
+            "National Classification of Occupations";
+        }
+
+        const fragment = document.createDocumentFragment();
+        const newLimit = Math.min(
+          displayedCount + directoryRowsPerPage,
+          allResults.length
+        );
+
+        for (let i = displayedCount; i < newLimit; i++) {
+          const result = allResults[i];
+          const d = result.details || {};
+          const family = d.family || "Unspecified";
+          const previousFamily =
+            i > 0 ? allResults[i - 1]?.details?.family || "Unspecified" : "";
+
+          if (i === 0 || family !== previousFamily) {
+            const familyRow = document.createElement("tr");
+            familyRow.className = "family-divider-row";
+            familyRow.innerHTML = `<td colspan="8">Family: ${family}</td>`;
+            fragment.appendChild(familyRow);
+          }
+
+          const row = document.createElement("tr");
+          row.className = "clickable-row";
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${result.occupation_title || ""}</td>
+            <td>${formatNcoCode(result.nco_code || "")}</td>
+            <td>${d.nco_2004_code || ""}</td>
+            <td>${d.division || ""}</td>
+            <td>${d.sub_division || ""}</td>
+            <td>${d.group || ""}</td>
+            <td>${d.family || ""}</td>
+          `;
+          row.addEventListener("click", () => showDetails(result));
+          fragment.appendChild(row);
+        }
+
+        resultsBody.appendChild(fragment);
+        displayedCount = newLimit;
+        document.getElementById("resultsCount").textContent =
+          `${displayedCount} of ${allResults.length}`;
+
+        if (displayedCount < allResults.length) {
+          showMoreBtn.textContent = "Show More";
+          showMoreBtn.classList.remove("hidden");
+        } else {
+          showMoreBtn.classList.add("hidden");
+        }
+      }
+
+      // --- Modal Logic ---
+      const modal = document.getElementById("detailModal");
+      const modalBody = document.getElementById("modalBody");
+      const closeModalBtn = document.querySelector(".close-modal");
+
+      function showDetails(job) {
+        const d = job.details || {};
+        const score = job.final_score || 0;
+        const progressStage = getProgressStage(score);
+        const signalIcon = createSignalIcon(progressStage);
+        const percentageText = score ? `${(score * 100).toFixed(1)}%` : "N/A";
+
+        modalBody.innerHTML = `
+          <h2>${job.occupation_title}</h2>
+          
+          <div class="modal-body-content">
+            <div class="modal-info-grid">
+              <div class="modal-info-item">
+                <div class="modal-info-item-label">NCO 2015 Code</div>
+                <div class="modal-info-item-value">${
+                  job.nco_code || "N/A"
+                }</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="modal-info-item-label">Match Level</div>
+                <div class="modal-info-item-value">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    ${signalIcon}
+                    <span>${percentageText}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            ${
+              d.nco_2004_code
+                ? `
+            <div class="modal-info-item" style="margin-bottom: 15px;">
+              <div class="modal-info-item-label">NCO 2004 Code</div>
+              <div class="modal-info-item-value">${d.nco_2004_code}</div>
+            </div>
+            `
+                : ""
+            }
+
+            <h4>Occupational Hierarchy</h4>
+            <p><strong>Division:</strong> ${d.division || "N/A"}</p>
+            <p><strong>Sub-Division:</strong> ${d.sub_division || "N/A"}</p>
+            <p><strong>Group:</strong> ${d.group || "N/A"}</p>
+            <p><strong>Family:</strong> ${d.family || "N/A"}</p>
+
+            <h4 style="margin-top: 20px;">Description</h4>
+            <p>${d.occupation_description || "No description available."}</p>
+          </div>
+        `;
+        modal.style.display = "block";
+      }
+
+      closeModalBtn.onclick = () => {
+        modal.style.display = "none";
+      };
+
+      window.onclick = (event) => {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+
+      // --- Voice & Translation Logic ---
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+      function showMicError(message) {
+        transcriptionPreview.innerHTML = `<em style="color: red;">${message}</em>`;
+      }
+
+      if (recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+        let isListening = false;
+
+        micBtn.addEventListener("click", () => {
+          if (isListening) {
+            recognition.stop();
+            isListening = false;
+          } else {
+            recognition.lang = languageSelect.value;
+            recognition.start();
+            isListening = true;
+          }
+        });
+
+        recognition.onstart = () => {
+          const micIcon = micBtn.querySelector("i");
+          micIcon.classList.remove("fa-microphone");
+          micIcon.classList.add("fa-microphone-slash");
+          micBtn.classList.add("active");
+          transcriptionPreview.innerHTML = "<em>Listening...</em>";
+          isListening = true;
+        };
+
+        recognition.onend = () => {
+          const micIcon = micBtn.querySelector("i");
+          micIcon.classList.remove("fa-microphone-slash");
+          micIcon.classList.add("fa-microphone");
+          micBtn.classList.remove("active");
+          transcriptionPreview.innerHTML = "";
+          isListening = false;
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event.error);
+          const micIcon = micBtn.querySelector("i");
+          micIcon.classList.remove("fa-microphone-slash");
+          micIcon.classList.add("fa-microphone");
+          micBtn.classList.remove("active");
+          transcriptionPreview.innerHTML = `<em style="color: red;">Error: ${event.error}</em>`;
+          isListening = false;
+        };
+
+        recognition.onresult = async (event) => {
+          let interimTranscript = "";
+          let finalTranscript = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          transcriptionPreview.innerHTML =
+            finalTranscript +
+            '<span class="interim">' +
+            interimTranscript +
+            "</span>";
+
+          if (finalTranscript) {
+            const translatedText = await translateText(
+              finalTranscript,
+              "auto",
+              "en"
+            );
+            occupationSearch.value = translatedText;
+            performSearch(false);
+            // Allow listening again after search completes
+            isListening = false;
+          }
+        };
+      } else {
+        micBtn.classList.add("disabled");
+        micBtn.setAttribute("aria-disabled", "true");
+        micBtn.title =
+          "Voice search not supported in this browser. Use Chrome or Edge over HTTPS or localhost.";
+        micBtn.addEventListener("click", () => {
+          showMicError(
+            "Voice search not supported here. Try Chrome/Edge on HTTPS or localhost."
+          );
+        });
+      }
+
+      async function translateText(text, source, target) {
+        try {
+          const response = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: text,
+              source_lang: source,
+              target_lang: target,
+              preferred_service: "lingua", // Can be changed to "bhashini" if needed
+            }),
+          });
+          const data = await response.json();
+          return data.translated_text || text;
+        } catch (e) {
+          console.error("Translation error", e);
+          return text;
+        }
+      }
+
+      // --- UI Interaction Logic ---
+      const translationBtn = document.getElementById("translationBtn");
+      const languageSelectDropdown = document.getElementById("languageSelect");
+
+      translationBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent the click from closing the dropdown immediately
+        languageSelectDropdown.classList.toggle("show");
+      });
+
+      // Close dropdown if clicked outside
+      window.addEventListener("click", (e) => {
+        if (
+          !translationBtn.contains(e.target) &&
+          !languageSelectDropdown.contains(e.target)
+        ) {
+          languageSelectDropdown.classList.remove("show");
+        }
+      });
+
+      function formatNcoCode(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        const compact = raw.replace(/\s+/g, "");
+        const parts = compact.split(".");
+        const digits = (s) => (s || "").replace(/\D/g, "");
+
+        if (parts.length === 1) {
+          const d = digits(parts[0]);
+          if (d.length === 8) return `${d.slice(0, 4)}.${d.slice(4, 8)}`;
+          if (d.length === 4) return `${d}.0000`;
+          if (d.length > 4 && d.length < 8) {
+            return `${d.slice(0, 4)}.${d.slice(4).padEnd(4, "0").slice(0, 4)}`;
+          }
+          if (d.length > 8) return `${d.slice(0, 4)}.${d.slice(4, 8)}`;
+          return raw;
+        }
+
+        const left = digits(parts[0]).slice(0, 4).padEnd(4, "0");
+        const right = digits(parts[1]).slice(0, 4).padEnd(4, "0");
+        return `${left}.${right}`;
+      }
+
+      // Initial load
+      updateSearchModeUI();
+      loadDirectory();
+    </script>
+  </body>
+</html>

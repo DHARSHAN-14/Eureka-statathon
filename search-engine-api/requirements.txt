@@ -1,0 +1,9 @@
+flask
+flask-cors
+gunicorn
+numpy
+pandas
+sentence-transformers
+faiss-cpu
+langdetect
+requests

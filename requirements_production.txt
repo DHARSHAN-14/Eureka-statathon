@@ -1,0 +1,83 @@
+# ==================================================
+# NCO Intelligence Engine - Production Requirements
+# ==================================================
+# Last Updated: 2026-06-13
+# Python: 3.8+
+
+# ==================================================
+# Core Dependencies
+# ==================================================
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# NLP & ML
+transformers==4.35.2
+sentence-transformers==2.2.2
+torch==2.2.0
+numpy==1.24.3
+
+# Search & Indexing
+faiss-cpu==1.7.4
+
+# Graph & Data Processing
+networkx==3.2
+pandas==2.1.3
+
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# ==================================================
+# Development Dependencies (Optional)
+# ==================================================
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Code Quality
+black==23.12.0
+flake8==6.1.0
+pylint==3.0.3
+isort==5.13.2
+mypy==1.7.1
+
+# Debugging
+ipython==8.18.1
+jupyter==1.0.0
+notebook==7.0.6
+
+# ==================================================
+# Optional Enhancements
+# ==================================================
+
+# Advanced Features
+aioredis==2.0.1  # For caching
+elasticsearch==8.11.0  # For distributed search
+
+# Monitoring & Logging
+python-logging-loki==0.3.2  # Loki logging
+prometheus-client==0.19.0  # Prometheus metrics
+
+# API Documentation
+python-jose==3.3.0  # JWT tokens
+passlib==1.7.4  # Password hashing
+
+# ==================================================
+# Production Deployment
+# ==================================================
+
+# ASGI Server
+gunicorn==21.2.0
+hypercorn==0.15.0
+
+# Process Management
+supervisor==4.2.5
+python-dotenv==1.0.0
+
+# Reverse Proxy Config (for nginx/apache)
+# - See docker-compose.yml for setup
