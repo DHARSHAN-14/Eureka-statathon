@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'search_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -51,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     const Color ashokaBluePrimary = Color(0xFF1F3C6F);
     const Color indiaOrange = Color(0xFFFF9933);
-    const Color indiaGreen = Color(0xFF138808);
+
 
     return Scaffold(
       body: Container(
