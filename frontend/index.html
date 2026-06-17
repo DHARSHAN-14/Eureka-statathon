@@ -1,0 +1,2837 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>National Classification of Occupations</title>
+    <link
+      rel="stylesheet"
+      href="css/gov-style.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      /* ── Font & Base ───────────────────────────────────────────── */
+      body, input, textarea, select, button {
+        font-family: 'Inter', Arial, sans-serif;
+      }
+
+      /* ── Hero Search Section ────────────────────────────────────── */
+      .search-hero-section {
+        background: linear-gradient(135deg, #002855 0%, #003f7a 60%, #005096 100%);
+        margin: 0 -20px;
+        padding: 36px 20px 40px;
+        position: relative;
+      }
+
+      .hero-title {
+        text-align: center;
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin: 0 0 6px;
+        line-height: 1.2;
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-subtitle {
+        text-align: center;
+        color: rgba(255,255,255,0.7);
+        font-size: 14px;
+        font-weight: 400;
+        margin: 0 0 20px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-search-card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.15);
+        padding: 20px 20px 16px;
+        max-width: 800px;
+        margin: 0 auto 0;
+        position: relative;
+        z-index: 2;
+      }
+
+      /* ── Redesigned Search Bar ───────────────────────────────────── */
+      .hero-search-row {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .hero-search-input-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 4px 12px;
+        gap: 8px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        min-height: 54px;
+        box-sizing: border-box;
+      }
+
+      .hero-search-input-wrap:focus-within {
+        border-color: #003366;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(0,51,102,0.1);
+      }
+
+      .hero-search-input-wrap .search-icon {
+        color: #94a3b8;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .hero-search-input-wrap:focus-within .search-icon {
+        color: #003366;
+      }
+
+      #occupationSearch {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 16px;
+        font-family: 'Inter', Arial, sans-serif;
+        color: #1e293b;
+        padding: 10px 0;
+        resize: none;
+        overflow: hidden;
+        line-height: 1.4;
+        outline: none;
+      }
+
+      #occupationSearch::placeholder {
+        color: #94a3b8;
+        font-size: 15px;
+      }
+
+      .hero-search-btn {
+        background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+        color: #1a1a1a;
+        border: none;
+        border-radius: 14px;
+        padding: 14px 26px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Inter', Arial, sans-serif;
+        box-shadow: 0 4px 12px rgba(255,193,7,0.4);
+        flex-shrink: 0;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        box-sizing: border-box;
+      }
+
+      .hero-search-btn:hover {
+        background: linear-gradient(135deg, #ffb300 0%, #ffa000 100%);
+        box-shadow: 0 6px 16px rgba(255,193,7,0.5);
+        transform: translateY(-1px);
+      }
+
+      .hero-search-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(255,193,7,0.3);
+      }
+
+      /* ── Search Mode Row inside card ─────────────────────────────── */
+      .hero-options-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 14px;
+      }
+
+      /* ── Chips inside card ───────────────────────────────────────── */
+      .hero-chips-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+        align-items: center;
+      }
+      .hero-chips-row::-webkit-scrollbar { display: none; }
+
+      .hero-chip-label {
+        font-size: 11.5px;
+        color: #94a3b8;
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      .search-chip {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-family: 'Inter', Arial, sans-serif;
+        color: #374151;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+        flex-shrink: 0;
+        font-weight: 500;
+      }
+
+      .search-chip:hover {
+        background: #003366;
+        border-color: #003366;
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0,51,102,0.2);
+      }
+
+      /* ── Ghost text accept badge ──────────────────────────────────── */
+      .ghost-accept-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: #e8f4fb;
+        border: 1px solid #93c5fd;
+        border-radius: 6px;
+        font-size: 11px;
+        color: #1d4ed8;
+        font-weight: 600;
+        flex-shrink: 0;
+        animation: badgePop 0.15s ease;
+        white-space: nowrap;
+      }
+
+      @keyframes badgePop {
+        from { opacity: 0; transform: scale(0.85); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+
+      .ghost-accept-badge.hidden { display: none; }
+
+      /* ── Keyboard hint ───────────────────────────────────────────── */
+      .search-kb-hint {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 10px;
+        font-size: 11.5px;
+        color: #94a3b8;
+        flex-wrap: wrap;
+      }
+
+      /* ── Guidance Container ──────────────────────────────────────── */
+      .guidance-container {
+        margin-top: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+      .guidance-summary {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        cursor: pointer;
+        background: #f1f5f9;
+        font-weight: 600;
+        color: #1e293b;
+        user-select: none;
+        list-style: none;
+      }
+      .guidance-summary::-webkit-details-marker { display: none; }
+      .guidance-summary:hover { background: #e2e8f0; }
+      .summary-title { margin-left: 8px; flex: 1; }
+      .toggle-icon { transition: transform 0.3s ease; color: #64748b; }
+      details[open] .toggle-icon { transform: rotate(180deg); }
+      .guidance-content {
+        padding: 16px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .guidance-content .suggestion-box {
+        margin: 0;
+        box-shadow: none;
+        border: 1px solid #cbd5e1;
+      }
+      .text-warning { color: #f59e0b; }
+
+      /* ── Results title font ──────────────────────────────────────── */
+      .results-header h2 {
+        font-family: 'Inter', Arial, sans-serif;
+        font-weight: 700;
+      }
+
+      /* ── Hide old h1 (replaced by hero-title) ────────────────────── */
+      main > h1 { display: none; }
+
+      /* ── Mobile hero ─────────────────────────────────────────────── */
+      @media (max-width: 768px) {
+        .search-hero-section {
+          margin: 0 -12px;
+          padding: 28px 12px 32px;
+        }
+        .hero-title { font-size: 20px; }
+        .hero-subtitle { font-size: 12px; margin-bottom: 20px; }
+        .hero-search-card {
+          border-radius: 16px;
+          padding: 14px 12px 12px;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        .hero-search-row { flex-direction: column; gap: 8px; }
+        .hero-search-input-wrap { border-radius: 12px; }
+        #occupationSearch { font-size: 15px; }
+        .hero-search-btn {
+          width: 100%;
+          border-radius: 12px;
+          padding: 13px;
+          font-size: 14px;
+        }
+        .hero-options-row { gap: 8px; }
+        .search-kb-hint { font-size: 10px; gap: 8px; justify-content: flex-start; }
+        .hero-chips-row { margin-top: 4px; }
+      }
+
+      /* ── Hierarchical Filters Section ──────────────────────────────── */
+      .hierarchical-filters-section {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+
+      .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr) 110px;
+        gap: 12px;
+        align-items: flex-end;
+      }
+
+      @media (max-width: 1024px) {
+        .filter-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .filter-reset-col {
+          grid-column: span 2;
+        }
+        .filter-reset-col .dropdown-label {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .filter-grid {
+          grid-template-columns: 1fr;
+        }
+        .filter-reset-col {
+          grid-column: span 1;
+        }
+      }
+
+      .custom-dropdown {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .custom-dropdown .dropdown-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .custom-dropdown .dropdown-trigger {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 42px;
+        box-sizing: border-box;
+      }
+
+      .custom-dropdown .dropdown-trigger:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+
+      .custom-dropdown.open .dropdown-trigger {
+        border-color: #003366;
+        box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.08);
+        background: #ffffff;
+      }
+
+      .custom-dropdown .trigger-text {
+        font-size: 13.5px;
+        color: #334155;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 6px;
+        max-width: calc(100% - 16px);
+      }
+
+      .custom-dropdown .trigger-arrow {
+        color: #64748b;
+        font-size: 12px;
+        transition: transform 0.2s ease;
+      }
+
+      .custom-dropdown.open .trigger-arrow {
+        transform: rotate(180deg);
+        color: #003366;
+      }
+
+      .custom-dropdown .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: dropdownFade 0.15s ease;
+      }
+
+      @keyframes dropdownFade {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .custom-dropdown .dropdown-menu.hidden {
+        display: none !important;
+      }
+
+      .custom-dropdown .dropdown-search-wrap {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+        gap: 8px;
+      }
+
+      .custom-dropdown .dropdown-search-wrap .search-icon {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+
+      .custom-dropdown .dropdown-search-input {
+        border: none;
+        background: transparent;
+        width: 100%;
+        outline: none;
+        font-size: 13px;
+        color: #1e293b;
+        padding: 4px 0;
+        font-family: inherit;
+      }
+
+      .custom-dropdown .dropdown-search-input::placeholder {
+        color: #94a3b8;
+      }
+
+      .custom-dropdown .dropdown-options-list {
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 6px 0;
+      }
+
+      .custom-dropdown .dropdown-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        font-size: 13px;
+        color: #334155;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        user-select: none;
+      }
+
+      .custom-dropdown .dropdown-option:hover {
+        background: #f1f5f9;
+      }
+
+      .custom-dropdown .dropdown-option.selected {
+        background: #f0f7ff;
+        color: #1d4ed8;
+        font-weight: 600;
+      }
+
+      .custom-dropdown .dropdown-option.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f8fafc;
+      }
+
+      .custom-dropdown .dropdown-option-checkbox {
+        width: 15px;
+        height: 15px;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+      }
+
+      .custom-dropdown .dropdown-option.selected .dropdown-option-checkbox {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+      }
+
+      .custom-dropdown .dropdown-option-checkbox::after {
+        content: "\f00c";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        color: #ffffff;
+        font-size: 9px;
+        display: none;
+      }
+
+      .custom-dropdown .dropdown-option.selected .dropdown-option-checkbox::after {
+        display: block;
+      }
+
+      .custom-dropdown .dropdown-option-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+
+      .custom-dropdown .dropdown-no-results {
+        padding: 12px 14px;
+        font-size: 13px;
+        color: #94a3b8;
+        text-align: center;
+        font-style: italic;
+      }
+
+      .custom-dropdown .dropdown-reset-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        font-size: 13px;
+        color: #475569;
+        font-weight: 600;
+        cursor: pointer;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.15s ease;
+      }
+
+      .custom-dropdown .dropdown-reset-option:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      .filter-reset-col {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .reset-filters-btn {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0 12px;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+        height: 42px;
+        box-sizing: border-box;
+        width: 100%;
+      }
+
+      .reset-filters-btn:hover {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+        color: #1e293b;
+      }
+
+      .reset-filters-btn:active {
+        background: #cbd5e1;
+        transform: translateY(1px);
+      }
+
+      @keyframes emptyBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+
+      .results-table tbody tr.no-results-row {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        cursor: default !important;
+      }
+      .results-table tbody tr.no-results-row::before {
+        display: none !important;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+    <script src="js/config.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-main">
+        <div class="logo-container">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg"
+            alt="Emblem of India"
+            class="logo"
+          />
+          <div class="logo-text">
+            <span class="main-title"
+              >Directorate General of Employment (DGE) | GoI | India</span
+            >
+            <span class="sub-title">श्रम एवं रोजगार मंत्रालय</span>
+            <span class="sub-title">Ministry of Labour and Employment</span>
+          </div>
+        </div>
+        <div class="header-logos-right">
+          <img
+            src="https://gc.mic.gov.in/statathon-2025.png"
+            alt="Statathon Logo"
+            class="g20-logo"
+          />
+          <!-- Other logos can be added here -->
+        </div>
+      </div>
+      <nav class="main-nav">
+        <ul class="nav-list">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Acts and Rules</a></li>
+          <li><a href="#">Citizen Corner</a></li>
+          <li><a href="#">Schemes & Activities</a></li>
+          <li><a href="#">Division</a></li>
+          <li><a href="#">Documents & Publications</a></li>
+          <li><a href="#">National Classification of Occupations</a></li>
+        </ul>
+      </nav>
+    </header>
+        <!-- ═══════════════ HERO SEARCH SECTION ═══════════════ -->
+        <div class="search-hero-section">
+          <h2 class="hero-title">National Classification of Occupations</h2>
+          <p class="hero-subtitle">Find any occupation by title, description, or natural language — in any Indian language</p>
+
+          <div class="hero-search-card">
+            <!-- Search input row -->
+            <div class="hero-search-row" style="position:relative;flex-wrap:wrap;">
+              <div class="hero-search-input-wrap" id="searchInputWrap">
+                <i class="fas fa-search search-icon"></i>
+                <div class="textarea-container" style="position: relative; flex: 1; display: flex; align-items: center;">
+                  <textarea
+                    id="occupationSearch"
+                    placeholder="Search by job title... e.g. Software Engineer"
+                    rows="1"
+                    style="width: 100%; position: relative; z-index: 1; background: transparent;"
+                  ></textarea>
+                  <div id="searchGhostText" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; font-size: 16px; font-family: 'Inter', Arial, sans-serif; line-height: 1.4; white-space: pre-wrap; overflow: hidden; padding: 10px 0; margin: 0; box-sizing: border-box; z-index: 2;"></div>
+                </div>
+                <!-- Ghost accept badge (shown when ghost suggestion active) -->
+                <div id="ghostAcceptBadge" class="ghost-accept-badge hidden">
+                  <kbd style="background:#dbeafe;border:1px solid #93c5fd;border-radius:3px;padding:1px 4px;font-size:10px;">Tab</kbd> to accept
+                </div>
+                <button id="micBtn" class="mic-button" title="Voice Search" tabindex="-1">
+                  <i class="fas fa-microphone"></i>
+                </button>
+                <div class="translation-wrapper">
+                  <button id="translationBtn" class="translation-button" title="Select language" tabindex="-1">
+                    <i class="fas fa-language"></i>
+                  </button>
+                  <select id="languageSelect" class="language-select-hidden" title="Language selection" tabindex="-1">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-IN">English (India)</option>
+                    <option value="hi-IN">Hindi</option>
+                    <option value="ta-IN">Tamil</option>
+                    <option value="te-IN">Telugu</option>
+                    <option value="bn-IN">Bengali</option>
+                    <option value="mr-IN">Marathi</option>
+                    <option value="gu-IN">Gujarati</option>
+                    <option value="kn-IN">Kannada</option>
+                    <option value="ml-IN">Malayalam</option>
+                    <option value="pa-IN">Punjabi</option>
+                    <option value="ur-IN">Urdu</option>
+                  </select>
+                </div>
+              </div>
+              <button id="applyBtn" class="hero-search-btn" type="submit">
+                <i class="fas fa-search" style="margin-right:6px;"></i>Search
+              </button>
+              <!-- Autocomplete dropdown anchored to search row -->
+              <div id="autocompleteDropdown" class="autocomplete-dropdown hidden" style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:999;"></div>
+            </div>
+            <div id="ncoCodeInput" class="nco-code-input hidden" aria-label="NCO code input">
+              <div class="nco-code-group">
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 1" />
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 2" />
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 3" />
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 4" />
+              </div>
+              <span class="nco-code-dot">.</span>
+              <div class="nco-code-group">
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 5" />
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 6" />
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 7" />
+                <input class="nco-digit" type="text" inputmode="numeric" maxlength="1" aria-label="NCO digit 8" />
+              </div>
+            </div>
+
+            <!-- Options row -->
+            <div class="hero-options-row">
+              <div class="search-mode-toggle">
+                <label class="search-mode-option">
+                  <input type="radio" name="searchMode" id="searchModeGeneral" value="general" checked />
+                  <span>General Search</span>
+                </label>
+                <label class="search-mode-option">
+                  <input type="radio" name="searchMode" id="searchModeNco" value="nco" />
+                  <span>NCO Code Search</span>
+                </label>
+              </div>
+              <label class="top-k-control">
+                <span>Top results</span>
+                <select id="topKSelect" title="Number of results to return">
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- ── HIERARCHICAL FILTERS ROW ── -->
+            <div class="hierarchical-filters-section" id="hierarchicalFiltersSection">
+              <div class="filter-grid">
+                <!-- Division Dropdown -->
+                <div class="custom-dropdown" id="dropdownDivision">
+                  <span class="dropdown-label">Division:</span>
+                  <div class="dropdown-trigger">
+                    <span class="trigger-text">All Divisions</span>
+                    <i class="fas fa-chevron-down trigger-arrow"></i>
+                  </div>
+                  <div class="dropdown-menu hidden">
+                    <div class="dropdown-search-wrap">
+                      <i class="fas fa-search search-icon"></i>
+                      <input type="text" class="dropdown-search-input" placeholder="Search Division..." />
+                    </div>
+                    <div class="dropdown-options-list"></div>
+                  </div>
+                </div>
+
+                <!-- Sub-Division Dropdown -->
+                <div class="custom-dropdown" id="dropdownSubDivision">
+                  <span class="dropdown-label">Sub-Division:</span>
+                  <div class="dropdown-trigger">
+                    <span class="trigger-text">All Sub-Divisions</span>
+                    <i class="fas fa-chevron-down trigger-arrow"></i>
+                  </div>
+                  <div class="dropdown-menu hidden">
+                    <div class="dropdown-search-wrap">
+                      <i class="fas fa-search search-icon"></i>
+                      <input type="text" class="dropdown-search-input" placeholder="Search Sub-Division..." />
+                    </div>
+                    <div class="dropdown-options-list"></div>
+                  </div>
+                </div>
+
+                <!-- Group Dropdown -->
+                <div class="custom-dropdown" id="dropdownGroup">
+                  <span class="dropdown-label">Group:</span>
+                  <div class="dropdown-trigger">
+                    <span class="trigger-text">All Groups</span>
+                    <i class="fas fa-chevron-down trigger-arrow"></i>
+                  </div>
+                  <div class="dropdown-menu hidden">
+                    <div class="dropdown-search-wrap">
+                      <i class="fas fa-search search-icon"></i>
+                      <input type="text" class="dropdown-search-input" placeholder="Search Group..." />
+                    </div>
+                    <div class="dropdown-options-list"></div>
+                  </div>
+                </div>
+
+                <!-- Family Dropdown -->
+                <div class="custom-dropdown" id="dropdownFamily">
+                  <span class="dropdown-label">Family:</span>
+                  <div class="dropdown-trigger">
+                    <span class="trigger-text">All Families</span>
+                    <i class="fas fa-chevron-down trigger-arrow"></i>
+                  </div>
+                  <div class="dropdown-menu hidden">
+                    <div class="dropdown-search-wrap">
+                      <i class="fas fa-search search-icon"></i>
+                      <input type="text" class="dropdown-search-input" placeholder="Search Family..." />
+                    </div>
+                    <div class="dropdown-options-list"></div>
+                  </div>
+                </div>
+
+                <!-- Reset Column -->
+                <div class="filter-reset-col">
+                  <span class="dropdown-label" style="visibility: hidden;">Reset:</span>
+                  <button id="resetFiltersBtn" class="reset-filters-btn">
+                    <i class="fas fa-undo"></i> Reset All
+                  </button>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+        <!-- ═══════════════════════════════════════════════════════ -->
+
+    <div class="container">
+      <main>
+        <h1>National Classification of Occupations</h1>
+          <div id="transcriptionPreview" class="transcription-preview"></div>
+          <details id="guidanceContainer" class="guidance-container hidden">
+            <summary class="guidance-summary">
+              <i class="fas fa-lightbulb text-warning"></i> 
+              <span class="summary-title">View Search Intelligence &amp; Guidance</span>
+              <i class="fas fa-chevron-down toggle-icon"></i>
+            </summary>
+            <div class="guidance-content">
+              <div id="suggestionBox" class="suggestion-box hidden"></div>
+              <div id="pigsBox" class="suggestion-box hidden"></div>
+            </div>
+          </details>
+
+        <div id="searchStatus" class="search-status hidden">
+          <div class="spinner"></div>
+          <span>Thinking...</span>
+        </div>
+        <div id="translationNotice" class="translation-notice hidden">
+          <div class="translation-content">
+            <i class="fas fa-globe"></i>
+            <span id="translationText"></span>
+          </div>
+        </div>
+
+        <div id="transliterationNotice" class="transliteration-notice hidden">
+          <div class="translation-content">
+            <i class="fas fa-keyboard"></i>
+            <span id="transliterationText"></span>
+          </div>
+        </div>
+
+        <div id="spellingNotice" class="spelling-notice hidden">
+          <div class="translation-content">
+            <i class="fas fa-spell-check"></i>
+            <span id="spellingText"></span>
+          </div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+          <div class="results-header" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <h2 id="resultsTitle" style="margin: 0;">Search Results</h2>
+            <div id="pipelineBadges" style="display: flex; gap: 8px; align-items: center;"></div>
+            <span id="resultsCount" class="results-count" style="margin-left: auto;"></span>
+          </div>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Job Name</th>
+                <th>NCO 2015</th>
+                <th>Match Level</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody">
+              <!-- Results will be dynamically inserted here -->
+            </tbody>
+          </table>
+          <div class="show-more-container">
+            <button id="showMoreBtn" class="btn-secondary hidden">
+              Show More
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      const occupationSearch = document.getElementById("occupationSearch");
+      const ncoCodeInput = document.getElementById("ncoCodeInput");
+      const ncoDigits = Array.from(document.querySelectorAll(".nco-digit"));
+      const resultsBody = document.getElementById("resultsBody");
+      const resultsTable = document.querySelector(".results-table");
+      const resultsTableHead = document.querySelector(".results-table thead");
+      const showMoreBtn = document.getElementById("showMoreBtn");
+      const searchStatus = document.getElementById("searchStatus");
+      const micBtn = document.getElementById("micBtn");
+      const languageSelect = document.getElementById("languageSelect");
+      const topKSelect = document.getElementById("topKSelect");
+      const transcriptionPreview = document.getElementById(
+        "transcriptionPreview"
+      );
+      const suggestionBox = document.getElementById("suggestionBox");
+      const pigsBox = document.getElementById("pigsBox");
+
+      function hideAllNotices() {
+        const transNotice = document.getElementById("translationNotice");
+        if (transNotice) transNotice.classList.add("hidden");
+        const xlitNotice = document.getElementById("transliterationNotice");
+        if (xlitNotice) xlitNotice.classList.add("hidden");
+        const spellNotice = document.getElementById("spellingNotice");
+        if (spellNotice) spellNotice.classList.add("hidden");
+        const badgesContainer = document.getElementById("pipelineBadges");
+        if (badgesContainer) badgesContainer.innerHTML = "";
+      }
+
+      let allResults = [];
+      let displayedCount = 0;
+      let lastRequestedTopK = 5;
+      let lastReturnedCount = 0;
+      let directoryMode = false;
+      const directoryRowsPerPage = 40;
+      let directoryResults = [];       // Permanent cache of all directory rows for real-time filtering
+      let realtimeDebounceTimer = null; // Debounce timer for real-time table filtering
+      let realtimeSemanticTimer = null; // Debounce timer for as-you-type SBERT search
+      let realtimeSemanticAbort = null; // AbortController for in-flight SBERT requests
+      let isRealtimeFiltered = false;   // True when showing client-side filtered results
+
+      // Global mappings for hierarchy
+      let divisionToSubDivs = {}; // division -> Set of sub_divisions
+      let subDivToGroups = {};     // sub_division -> Set of groups
+      let groupToFamilies = {};    // group -> Set of families
+
+      // All unique values
+      const allDivisions = new Set();
+      const allSubDivisions = new Set();
+      const allGroups = new Set();
+      const allFamilies = new Set();
+
+      // Selected values
+      const selectedDivisions = new Set();
+      const selectedSubDivisions = new Set();
+      const selectedGroups = new Set();
+      const selectedFamilies = new Set();
+
+      // --- Progress Bar Functions ---
+      function getProgressStage(score) {
+        if (score >= 0.9) return 5; // Very High Match (90-100%)
+        if (score >= 0.7) return 4; // High Match (70-89%)
+        if (score >= 0.5) return 3; // Medium Match (50-69%)
+        if (score >= 0.3) return 2; // Low Match (30-49%)
+        return 1; // Very Low Match (0-29%)
+      }
+
+      function createSignalIcon(stage) {
+        return `
+          <div class="signal-strength stage-${stage}">
+            <div class="signal-bar signal-bar-1"></div>
+            <div class="signal-bar signal-bar-2"></div>
+            <div class="signal-bar signal-bar-3"></div>
+            <div class="signal-bar signal-bar-4"></div>
+            <div class="signal-bar signal-bar-5"></div>
+          </div>
+        `;
+      }
+
+      // --- Event Listeners ---
+      document
+        .getElementById("applyBtn")
+        .addEventListener("click", () => performSearch(false));
+
+      // Make search icon clickable to trigger search
+      const searchIcon = document.querySelector("#searchInputWrap .search-icon");
+      if (searchIcon) {
+        searchIcon.style.cursor = "pointer";
+        searchIcon.addEventListener("click", () => performSearch(false));
+      }
+
+      occupationSearch.addEventListener("keydown", (e) => {
+        // Tab/ArrowRight: accept ghost text suggestion
+        if ((e.key === "Tab" || e.key === "ArrowRight") && ghostSuggestion) {
+          e.preventDefault();
+          occupationSearch.value = ghostFull;
+          clearGhost();
+          hideDropdown();
+          return;
+        }
+        // Escape: dismiss autocomplete
+        if (e.key === "Escape") {
+          clearGhost();
+          hideDropdown();
+          return;
+        }
+        // ArrowDown: navigate dropdown
+        if (e.key === "ArrowDown" && !acDropdown.classList.contains("hidden")) {
+          e.preventDefault();
+          navigateDropdown(1);
+          return;
+        }
+        if (e.key === "ArrowUp" && !acDropdown.classList.contains("hidden")) {
+          e.preventDefault();
+          navigateDropdown(-1);
+          return;
+        }
+        if (e.key === "Enter" && !e.shiftKey) {
+          // If item selected in dropdown, use it
+          const active = acDropdown.querySelector(".autocomplete-item.active");
+          if (active) {
+            e.preventDefault();
+            occupationSearch.value = active.dataset.value || active.querySelector(".ac-title").textContent;
+            clearGhost();
+            hideDropdown();
+            performSearch(false);
+            return;
+          }
+          e.preventDefault();
+          performSearch(false);
+        }
+      });
+
+      // Auto-expand textarea only when there are newlines
+      function autoExpand() {
+        const lines = occupationSearch.value.split("\n").length;
+        const newRows = Math.max(1, Math.min(lines, 4));
+        occupationSearch.rows = newRows;
+      }
+      occupationSearch.addEventListener("input", autoExpand);
+      occupationSearch.addEventListener("scroll", () => {
+        const ghostTextEl = document.getElementById("searchGhostText");
+        if (ghostTextEl) {
+          ghostTextEl.scrollTop = occupationSearch.scrollTop;
+        }
+      });
+      showMoreBtn.addEventListener("click", () => displayResults(true));
+
+      // =====================================================================
+      // GHOST TEXT & AUTOCOMPLETE ENGINE
+      // =====================================================================
+      const ghostAcceptBadge = document.getElementById("ghostAcceptBadge");
+      const acDropdown = document.getElementById("autocompleteDropdown");
+      let ghostSuggestion = "";
+      let ghostFull = "";
+      let isApplyingGhost = false; // Prevents input event re-entrancy
+      let titleIndex = []; // Built once directory loads
+      let acDebounceTimer = null;
+      let acActiveIndex = -1;
+
+      // Build a lightweight title index from directory results
+      function buildTitleIndex(results) {
+        titleIndex = results.map(r => ({
+          title: r.occupation_title || "",
+          titleLower: (r.occupation_title || "").toLowerCase(),
+          nco: r.nco_code || "",
+          division: r.details?.division || ""
+        })).filter(r => r.title);
+      }
+
+      // Find best match (case-insensitive) for ghost text, supporting sentences and prompts
+      function findGhostMatch(query) {
+        if (!query || query.length < 2 || query.length > 500) return null;
+        
+        const trimmedQuery = query.trim();
+        const words = trimmedQuery.split(/\s+/);
+        if (words.length === 0) return null;
+
+        // Check up to 10 words suffix
+        const maxWords = Math.min(words.length, 10);
+        
+        for (let len = maxWords; len >= 1; len--) {
+          const suffixWords = words.slice(words.length - len);
+          const suffix = suffixWords.join(" ").toLowerCase();
+          
+          if (suffix.length < 2) continue;
+          
+          // Check if suffix matches any title exactly
+          let hasExactMatch = false;
+          for (let i = 0; i < titleIndex.length; i++) {
+            if (titleIndex[i].titleLower === suffix) {
+              hasExactMatch = true;
+              break;
+            }
+          }
+          if (hasExactMatch) {
+            return null;
+          }
+          
+          for (let i = 0; i < titleIndex.length; i++) {
+            const titleLower = titleIndex[i].titleLower;
+            if (titleLower.startsWith(suffix) && titleLower !== suffix) {
+              const title = titleIndex[i].title;
+              const suffixIdx = query.toLowerCase().lastIndexOf(suffix);
+              if (suffixIdx === -1) continue;
+              
+              const prefix = query.slice(0, suffixIdx);
+              const casedTitle = matchCase(title, query.slice(suffixIdx));
+              return prefix + casedTitle;
+            }
+          }
+        }
+        return null;
+      }
+
+      // Highlight matched prefix or matched last word in a string for dropdown display
+      function highlightMatch(text, query) {
+        if (!query) return text;
+        const qLower = query.toLowerCase();
+        const textLower = text.toLowerCase();
+        
+        let idx = textLower.indexOf(qLower);
+        if (idx !== -1) {
+          return text.slice(0, idx) + '<em>' + text.slice(idx, idx + query.length) + '</em>' + text.slice(idx + query.length);
+        }
+        
+        const words = query.trim().split(/\s+/);
+        const lastWord = words[words.length - 1];
+        if (lastWord && lastWord.length >= 2) {
+          const lwLower = lastWord.toLowerCase();
+          idx = textLower.indexOf(lwLower);
+          if (idx !== -1) {
+            return text.slice(0, idx) + '<em>' + text.slice(idx, idx + lastWord.length) + '</em>' + text.slice(idx + lastWord.length);
+          }
+        }
+        return text;
+      }
+
+      // Find matches where any word in the title starts with the last word of query
+      function getLastWordPrefixMatches(query) {
+        const cleanQuery = query.trim();
+        if (!cleanQuery) return [];
+        const words = cleanQuery.toLowerCase().split(/\s+/);
+        const lastWord = words[words.length - 1];
+        if (!lastWord || lastWord.length < 2) return [];
+
+        const matches = [];
+        for (let i = 0; i < titleIndex.length; i++) {
+          const title = titleIndex[i].title;
+          const titleLower = titleIndex[i].titleLower;
+          
+          const titleWords = titleLower.split(/[^a-z0-9]+/);
+          const hasWordStartingWith = titleWords.some(w => w.startsWith(lastWord));
+          
+          if (hasWordStartingWith) {
+            matches.push({
+              title: title,
+              nco: titleIndex[i].nco,
+              type: "prefix"
+            });
+          }
+        }
+        return matches;
+      }
+
+      function clearGhost() {
+        ghostSuggestion = "";
+        ghostFull = "";
+        const ghostTextEl = document.getElementById("searchGhostText");
+        if (ghostTextEl) ghostTextEl.innerHTML = "";
+        if (ghostAcceptBadge) ghostAcceptBadge.classList.add("hidden");
+      }
+
+      function matchCase(suggestion, typed) {
+        if (typed === typed.toUpperCase() && typed !== typed.toLowerCase()) {
+          return suggestion.toUpperCase();
+        }
+        if (typed === typed.toLowerCase() && typed !== typed.toUpperCase()) {
+          return suggestion.toLowerCase();
+        }
+        return suggestion;
+      }
+
+      function renderGhost(typed, suggestion) {
+        const casedSuggestion = matchCase(suggestion, typed);
+        ghostFull = casedSuggestion;
+        ghostSuggestion = casedSuggestion.slice(typed.length);
+        
+        const escapedTyped = escapeHtml(typed);
+        const escapedGhost = escapeHtml(ghostSuggestion);
+        
+        const ghostTextEl = document.getElementById("searchGhostText");
+        if (ghostTextEl) {
+          ghostTextEl.innerHTML = `<span style="color: transparent; white-space: pre-wrap;">${escapedTyped}</span><span style="color: #94a3b8; white-space: pre-wrap;">${escapedGhost}</span>`;
+        }
+        
+        if (ghostAcceptBadge) ghostAcceptBadge.classList.remove("hidden");
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      function hideDropdown() {
+        acDropdown.classList.add("hidden");
+        acDropdown.innerHTML = "";
+        acActiveIndex = -1;
+      }
+
+      function navigateDropdown(dir) {
+        const items = acDropdown.querySelectorAll(".autocomplete-item");
+        if (!items.length) return;
+        items[acActiveIndex]?.classList.remove("active");
+        acActiveIndex = Math.max(0, Math.min(items.length - 1, acActiveIndex + dir));
+        items[acActiveIndex].classList.add("active");
+        items[acActiveIndex].scrollIntoView({ block: "nearest" });
+      }
+
+      function renderDropdown(items, query, isLoading) {
+        if (isLoading) {
+          acDropdown.innerHTML = `<div class="autocomplete-loading"><div class="ac-spinner"></div>Finding matches...</div>`;
+          acDropdown.classList.remove("hidden");
+          return;
+        }
+        if (!items || !items.length) { hideDropdown(); return; }
+        acDropdown.innerHTML =
+          `<div class="autocomplete-header">Suggestions</div>` +
+          items.slice(0, 7).map((item, i) => {
+            const icon = item.type === "semantic" ? '<i class="fas fa-search" style="font-size: 11px; color: #64748b;"></i>' : '<i class="fas fa-briefcase" style="font-size: 11px; color: #003366;"></i>';
+            const meta = item.nco ? formatNcoCode(item.nco) : "";
+            const titleHtml = highlightMatch(item.title, query);
+            return `<div class="autocomplete-item" data-value="${escapeHtml(item.title)}" data-index="${i}">
+              <div class="ac-icon">${icon}</div>
+              <div class="ac-title">${titleHtml}</div>
+              ${meta ? `<div class="ac-meta">${meta}</div>` : ''}
+            </div>`;
+          }).join("");
+        acDropdown.classList.remove("hidden");
+        acDropdown.querySelectorAll(".autocomplete-item").forEach(el => {
+          el.addEventListener("mousedown", (e) => {
+            e.preventDefault(); // Prevent blur before click fires
+            occupationSearch.value = el.dataset.value;
+            clearGhost();
+            hideDropdown();
+            occupationSearch.focus();
+            performSearch(false);
+          });
+        });
+        acActiveIndex = -1;
+      }
+
+      // Main input handler: ghost text + debounced dropdown + real-time table filter
+      occupationSearch.addEventListener("input", () => {
+        if (isApplyingGhost) return; // Prevent event loop when we set value programmatically
+        const val = occupationSearch.value;
+
+        // Ghost text: instant prefix match
+        const ghostMatch = findGhostMatch(val);
+        if (ghostMatch) {
+          renderGhost(val, ghostMatch);
+        } else {
+          clearGhost();
+        }
+
+
+
+        // ── Real-time SBERT semantic search (debounced) for General Search mode ──
+        clearTimeout(realtimeDebounceTimer);
+        clearTimeout(realtimeSemanticTimer);
+        if (searchMode !== "nco") {
+          realtimeSemanticSearch(val);
+        }
+
+        // Debounced semantic autocomplete dropdown
+        clearTimeout(acDebounceTimer);
+        if (!val.trim() || val.trim().length < 2) {
+          hideDropdown();
+          return;
+        }
+
+        const wordCount = val.trim().split(/\s+/).length;
+
+        if (wordCount <= 2) {
+          // For short queries: instant client-side prefix matches
+          const q = val.toLowerCase();
+          const prefixMatches = titleIndex
+            .filter(r => r.titleLower.includes(q))
+            .slice(0, 7)
+            .map(r => ({ title: r.title, nco: r.nco, type: "prefix" }));
+          if (prefixMatches.length) {
+            renderDropdown(prefixMatches, val, false);
+          } else {
+            hideDropdown();
+          }
+          // Also fire semantic search after a short delay
+          acDebounceTimer = setTimeout(() => semanticAutocomplete(val), 500);
+        } else {
+          // Instant client-side last-word matches
+          const instantMatches = getLastWordPrefixMatches(val);
+          if (instantMatches.length) {
+            renderDropdown(instantMatches.slice(0, 7), val, false);
+          }
+          // For sentences/prompts: show loading then call API
+          acDebounceTimer = setTimeout(() => semanticAutocomplete(val), 380);
+        }
+      });
+
+      async function semanticAutocomplete(query) {
+        if (!query.trim() || query.trim().length < 2) return;
+        try {
+          const res = await fetch(window.API_BASE_URL + "/api/search?top_k=7", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: query, search_mode: "general", top_k: 7 }),
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (occupationSearch.value !== query) return; // Stale
+          const items = (data.results || []).slice(0, 7).map(r => ({
+            title: r.occupation_title,
+            nco: r.nco_code,
+            type: "semantic"
+          }));
+
+          // Intelligently merge client-side last-word matches and server-side semantic results
+          const lastWordMatches = getLastWordPrefixMatches(query).slice(0, 4);
+          const seen = new Set(lastWordMatches.map(i => i.title.toLowerCase()));
+          const merged = [
+            ...lastWordMatches,
+            ...items.filter(i => !seen.has(i.title.toLowerCase()))
+          ].slice(0, 7);
+
+          renderDropdown(merged.length ? merged : items, query, false);
+        } catch (_) { /* silent fail */ }
+      }
+
+      // Close dropdown on outside click
+      document.addEventListener("click", (e) => {
+        if (!acDropdown.contains(e.target) && e.target !== occupationSearch) {
+          hideDropdown();
+        }
+      });
+
+      // =====================================================================
+      // ROTATING PLACEHOLDER HINTS
+      // =====================================================================
+      const placeholderHints = [
+        "Search by job title... e.g. Software Engineer",
+        "Describe what you do... e.g. I operate machines in a factory",
+        "Natural language works too... e.g. I care for patients",
+        "Try an occupation name... e.g. Electrician, Plumber",
+        "Describe your role... e.g. I manage a team of workers",
+        "Search in any language — translation is automatic",
+      ];
+      const mobilePlaceholderHints = [
+        "Search by job title...",
+        "Describe what you do...",
+        "Search in any language...",
+        "Type a keyword..."
+      ];
+      let hintIdx = 0;
+      function rotatePlaceholder() {
+        if (document.activeElement === occupationSearch) return;
+        if (occupationSearch.value) return;
+        if (window.innerWidth < 768) {
+          hintIdx = (hintIdx + 1) % mobilePlaceholderHints.length;
+          occupationSearch.placeholder = mobilePlaceholderHints[hintIdx];
+        } else {
+          hintIdx = (hintIdx + 1) % placeholderHints.length;
+          occupationSearch.placeholder = placeholderHints[hintIdx];
+        }
+      }
+      setInterval(rotatePlaceholder, 3800);
+
+      // =====================================================================
+      // CHIP CLICK HANDLERS
+      // =====================================================================
+      document.querySelectorAll(".search-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const query = chip.dataset.query;
+          occupationSearch.value = query;
+          clearGhost();
+          hideDropdown();
+          autoExpand();
+          occupationSearch.focus();
+          performSearch(false);
+        });
+      });
+
+      // =====================================================================
+      // SWIPE DOWN TO CLOSE MODAL (mobile)
+      // =====================================================================
+      (function setupSwipeClose() {
+        const mc = document.querySelector(".modal-content");
+        if (!mc) return;
+        let startY = 0;
+        mc.addEventListener("touchstart", (e) => { startY = e.touches[0].clientY; }, { passive: true });
+        mc.addEventListener("touchend", (e) => {
+          const delta = e.changedTouches[0].clientY - startY;
+          if (delta > 80) {
+            document.getElementById("detailModal").style.display = "none";
+          }
+        }, { passive: true });
+      })();
+
+
+      let currentQuery = "";
+      let selectedLanguage = null;
+      let searchMode = "general";
+
+      function getTopK() {
+        const value = Number.parseInt(topKSelect.value, 10);
+        return Number.isFinite(value) ? value : 5;
+      }
+
+      function setSearchTableHeader() {
+        resultsTableHead.innerHTML = `
+          <tr>
+            <th>Rank</th>
+            <th>Job Name</th>
+            <th>NCO 2015</th>
+            <th>Match Level</th>
+            <th>Action</th>
+          </tr>
+        `;
+      }
+
+      function setDirectoryTableHeader() {
+        resultsTableHead.innerHTML = `
+          <tr>
+            <th>S.No</th>
+            <th>Occupational Title</th>
+            <th>NCO 2015</th>
+            <th>NCO 2004</th>
+            <th>Division</th>
+            <th>Sub-Division</th>
+            <th>Group</th>
+            <th>Family</th>
+          </tr>
+        `;
+      }
+
+      async function loadDirectory() {
+        directoryMode = true;
+        resultsTable.classList.add("directory-table");
+        searchStatus.classList.remove("hidden");
+        hideAllNotices();
+        suggestionBox.classList.add("hidden");
+        pigsBox.classList.add("hidden");
+        document.getElementById("guidanceContainer").classList.add("hidden");
+        showMoreBtn.classList.add("hidden");
+
+        try {
+          const response = await fetch(window.API_BASE_URL + "/api/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: "", search_mode: "general", bypass_pagination: true }),
+          });
+          const data = await response.json();
+          allResults = data.results || [];
+          directoryResults = [...allResults]; // Cache for real-time filtering
+          buildHierarchyData();
+          renderAllDropdowns();
+          lastReturnedCount = data.returned_count || allResults.length;
+          displayedCount = 0;
+          isRealtimeFiltered = false;
+          // Build title index for autocomplete/ghost-text
+          buildTitleIndex(allResults);
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          displayResults(false);
+        } catch (error) {
+          console.error("Directory load error:", error);
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          setDirectoryTableHeader();
+          document.getElementById("resultsTitle").textContent =
+            "National Classification of Occupations";
+          document.getElementById("resultsCount").textContent = "";
+          resultsBody.innerHTML =
+            '<tr><td colspan="8">Unable to load occupation directory.</td></tr>';
+        }
+      }
+
+      // =====================================================================
+      // REAL-TIME DIRECTORY FILTERING (client-side full-text search)
+      // =====================================================================
+      function filterDirectoryRealtime(query) {
+        if (!directoryResults.length) return; // Directory not loaded yet
+
+        if (searchMode === "nco") {
+          const digits = ncoDigits.map(input => input.value).join("").replace(/\D/g, "");
+          let filtered = directoryResults;
+          let hasDigits = !!digits;
+          if (hasDigits) {
+            filtered = directoryResults.filter(r => {
+              const rowNcoDigits = (r.nco_code || "").replace(/\D/g, "");
+              return rowNcoDigits.startsWith(digits);
+            });
+          }
+
+          // Apply hierarchical dropdown filters
+          filtered = applyHierarchicalFilters(filtered);
+
+          let hasHierarchical = (selectedDivisions.size > 0 || selectedSubDivisions.size > 0 || selectedGroups.size > 0 || selectedFamilies.size > 0);
+
+          allResults = filtered;
+          directoryMode = true;
+          isRealtimeFiltered = hasDigits || hasHierarchical;
+          resultsTable.classList.add("directory-table");
+          displayedCount = 0;
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          hideAllNotices();
+          suggestionBox.classList.add("hidden");
+          pigsBox.classList.add("hidden");
+          document.getElementById("guidanceContainer").classList.add("hidden");
+          displayResults(false);
+          return;
+        }
+
+        const q = (query || "").trim().toLowerCase();
+
+        if (!q) {
+          let filtered = applyHierarchicalFilters(directoryResults);
+          let hasHierarchical = (selectedDivisions.size > 0 || selectedSubDivisions.size > 0 || selectedGroups.size > 0 || selectedFamilies.size > 0);
+
+          allResults = filtered;
+          directoryMode = true;
+          isRealtimeFiltered = hasHierarchical;
+          resultsTable.classList.add("directory-table");
+          displayedCount = 0;
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          hideAllNotices();
+          suggestionBox.classList.add("hidden");
+          pigsBox.classList.add("hidden");
+          document.getElementById("guidanceContainer").classList.add("hidden");
+          displayResults(false);
+          return;
+        }
+
+        // Tokenize query and strip common English stop words
+        const STOP_WORDS = new Set([
+          'i','me','my','mine','myself','we','us','our','ours','ourselves',
+          'you','your','yours','yourself','yourselves',
+          'he','him','his','she','her','hers','it','its',
+          'they','them','their','theirs','themselves',
+          'a','an','the','this','that','these','those',
+          'am','is','are','was','were','be','been','being',
+          'have','has','had','having','do','does','did','doing',
+          'will','would','shall','should','can','could','may','might','must',
+          'and','but','or','nor','not','no','yes',
+          'if','then','else','so','than','too','very','just','also','now',
+          'of','at','by','for','with','about','as','into','onto','upon',
+          'to','from','in','on','up','down','out','off','over','under',
+          'between','through','during','before','after','above','below',
+          'here','there','when','where','why','how',
+          'all','both','each','few','more','most','some','any','other',
+          'what','which','who','whom','whose',
+          'again','further','once','only','own','same','such',
+          'need','want','like','used','using',
+          'work','works','worked','working','job','doing','did','done'
+        ]);
+
+        const rawTokens = q.split(/\s+/).filter(t => t.length > 0);
+        const contentTokens = rawTokens.filter(t => !STOP_WORDS.has(t));
+
+        // If all words were stop words, show the full directory
+        if (contentTokens.length === 0) {
+          let filtered = applyHierarchicalFilters(directoryResults);
+          let hasHierarchical = (selectedDivisions.size > 0 || selectedSubDivisions.size > 0 || selectedGroups.size > 0 || selectedFamilies.size > 0);
+
+          allResults = filtered;
+          directoryMode = true;
+          isRealtimeFiltered = hasHierarchical;
+          resultsTable.classList.add("directory-table");
+          displayedCount = 0;
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          displayResults(false);
+          return;
+        }
+
+        // Build search text for each row once
+        function buildSearchText(r) {
+          const title = (r.occupation_title || "").toLowerCase();
+          const ncoRaw = (r.nco_code || "").replace(/\./g, "").toLowerCase();
+          const ncoFmt = (r.nco_code || "").toLowerCase();
+          const d = r.details || {};
+          const division   = (d.division || "").toLowerCase();
+          const subDiv     = (d.sub_division || "").toLowerCase();
+          const group      = (d.group || "").toLowerCase();
+          const family     = (d.family || "").toLowerCase();
+          const desc       = (d.occupation_description || "").toLowerCase();
+          const nco2004    = (d.nco_2004_code || "").toLowerCase();
+          return `${title} ${ncoRaw} ${ncoFmt} ${nco2004} ${division} ${subDiv} ${group} ${family} ${desc}`;
+        }
+
+        // Primary: AND match — all content tokens must appear
+        let filtered = directoryResults.filter(r => {
+          const searchText = buildSearchText(r);
+          return contentTokens.every(token => searchText.includes(token));
+        });
+
+        // Fallback: if AND match returns nothing and we have 2+ tokens, score by token hits
+        if (filtered.length === 0 && contentTokens.length >= 2) {
+          const scored = directoryResults.map(r => {
+            const searchText = buildSearchText(r);
+            const hits = contentTokens.filter(token => searchText.includes(token)).length;
+            return { r, hits };
+          }).filter(s => s.hits > 0);
+          scored.sort((a, b) => b.hits - a.hits);
+          filtered = scored.map(s => s.r);
+        }
+
+        // Apply hierarchical dropdown filters
+        filtered = applyHierarchicalFilters(filtered);
+
+        let hasHierarchical = (selectedDivisions.size > 0 || selectedSubDivisions.size > 0 || selectedGroups.size > 0 || selectedFamilies.size > 0);
+
+        allResults = filtered;
+        directoryMode = true;
+        isRealtimeFiltered = true;
+        resultsTable.classList.add("directory-table");
+        displayedCount = 0;
+        searchStatus.classList.add("hidden");
+        document.getElementById("resultsContainer").classList.remove("hidden");
+        hideAllNotices();
+        suggestionBox.classList.add("hidden");
+        pigsBox.classList.add("hidden");
+        document.getElementById("guidanceContainer").classList.add("hidden");
+        displayResults(false);
+      }
+
+      // =====================================================================
+      // REAL-TIME SBERT SEMANTIC SEARCH (as-you-type, debounced API call)
+      // =====================================================================
+      function realtimeSemanticSearch(query) {
+        clearTimeout(realtimeSemanticTimer);
+
+        const q = (query || "").trim();
+
+        // If empty, revert to full directory view
+        if (!q) {
+          if (realtimeSemanticAbort) { realtimeSemanticAbort.abort(); realtimeSemanticAbort = null; }
+          directoryMode = true;
+          isRealtimeFiltered = false;
+          allResults = applyHierarchicalFilters(directoryResults);
+          displayedCount = 0;
+          resultsTable.classList.add("directory-table");
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          hideAllNotices();
+          suggestionBox.classList.add("hidden");
+          pigsBox.classList.add("hidden");
+          document.getElementById("guidanceContainer").classList.add("hidden");
+          displayResults(false);
+          return;
+        }
+
+        // Too short for meaningful SBERT search — use client-side filter as fallback
+        if (q.length < 3) {
+          realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(q), 150);
+          return;
+        }
+
+        // Debounce the SBERT API call (500ms to avoid overwhelming the server)
+        realtimeSemanticTimer = setTimeout(async () => {
+          // Abort any previous in-flight SBERT request
+          if (realtimeSemanticAbort) { realtimeSemanticAbort.abort(); }
+          realtimeSemanticAbort = new AbortController();
+
+          try {
+            const requestedTopK = getTopK();
+            const selectedLang = languageSelect.value;
+            const res = await fetch(`${window.API_BASE_URL || ""}/api/search?top_k=${requestedTopK}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                query: q,
+                user_language: selectedLang,
+                search_mode: "general",
+                top_k: requestedTopK,
+              }),
+              signal: realtimeSemanticAbort.signal,
+            });
+
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Stale check: if the user has typed something different, discard
+            if (occupationSearch.value.trim() !== q) return;
+
+            // Switch to search results mode (ranked SBERT results, not directory)
+            directoryMode = false;
+            isRealtimeFiltered = false;
+            resultsTable.classList.remove("directory-table");
+            searchStatus.classList.add("hidden");
+            document.getElementById("resultsContainer").classList.remove("hidden");
+            hideAllNotices();
+            suggestionBox.classList.add("hidden");
+            pigsBox.classList.add("hidden");
+            document.getElementById("guidanceContainer").classList.add("hidden");
+
+            let results = data.results || [];
+            // Apply confidence threshold — hide very low-confidence results
+            if (results.length > 0) {
+              const topScore = results[0].final_score || 0;
+              if (topScore < 0.40) {
+                results = [];
+              }
+            }
+
+            allResults = applyHierarchicalFilters(results);
+            lastRequestedTopK = data.top_k || getTopK();
+            lastReturnedCount = data.returned_count || results.length;
+            displayedCount = 0;
+            displayResults(false);
+          } catch (e) {
+            if (e.name === "AbortError") return; // Intentional abort, ignore
+            console.error("Realtime SBERT search error:", e);
+          }
+        }, 500);
+      }
+
+      topKSelect.addEventListener("change", () => {
+        if (getActiveQuery().trim()) {
+          performSearch(false);
+        }
+      });
+
+      function getNcoCodeFromBoxes() {
+        const digits = ncoDigits.map((input) => input.value).join("");
+        if (!digits) return "";
+        return `${digits.slice(0, 4)}.${digits.slice(4, 8)}`;
+      }
+
+      function setNcoCodeBoxes(value) {
+        const digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+        ncoDigits.forEach((input, index) => {
+          input.value = digits[index] || "";
+        });
+      }
+
+      function getActiveQuery() {
+        return searchMode === "nco"
+          ? getNcoCodeFromBoxes()
+          : occupationSearch.value;
+      }
+
+      function updateSearchModeUI() {
+        const isNco = searchMode === "nco";
+        // Hide entire search row (text input + search button) in NCO mode
+        const heroSearchRow = document.querySelector(".hero-search-row");
+        if (heroSearchRow) heroSearchRow.classList.toggle("hidden", isNco);
+        ncoCodeInput.classList.toggle("hidden", !isNco);
+        topKSelect.closest(".top-k-control").classList.toggle("hidden", isNco);
+        if (isNco) {
+          occupationSearch.placeholder =
+            window.innerWidth < 768 ? "Search by NCO code..." : "Search by NCO code... (e.g., 1234.5678)";
+          setNcoCodeBoxes(occupationSearch.value);
+          setTimeout(() => ncoDigits[0].focus(), 0);
+          clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(), 150);
+        } else {
+          occupationSearch.placeholder =
+            window.innerWidth < 768 ? "Search by Occupation..." : "Search by Occupation... (Enter to search, Shift+Enter for new line)";
+          occupationSearch.focus();
+          clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(occupationSearch.value), 150);
+        }
+      }
+
+      ncoDigits.forEach((input, index) => {
+        input.addEventListener("input", (event) => {
+          const digits = event.target.value.replace(/\D/g, "");
+          event.target.value = digits.slice(-1);
+          if (digits && index < ncoDigits.length - 1) {
+            ncoDigits[index + 1].focus();
+          }
+          clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(), 150);
+        });
+
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Backspace" && !input.value && index > 0) {
+            ncoDigits[index - 1].focus();
+          }
+          if (event.key === "Enter") {
+            event.preventDefault();
+            performSearch(false);
+          }
+        });
+
+        input.addEventListener("paste", (event) => {
+          event.preventDefault();
+          const pasted = event.clipboardData.getData("text");
+          setNcoCodeBoxes(pasted);
+          const nextEmpty = ncoDigits.find((digit) => !digit.value);
+          (nextEmpty || ncoDigits[ncoDigits.length - 1]).focus();
+          clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(), 150);
+        });
+      });
+
+      document.querySelectorAll('input[name="searchMode"]').forEach((el) => {
+        el.addEventListener("change", (e) => {
+          searchMode = e.target.value;
+          updateSearchModeUI();
+        });
+      });
+
+
+
+      // --- Search Logic ---
+      async function performSearch(isShowMore) {
+        const query = getActiveQuery();
+        if (isShowMore) return;
+
+        if (!query.replace(/\./g, "").trim()) {
+          await loadDirectory();
+          return;
+        }
+
+        if (searchMode === "nco") {
+          filterDirectoryRealtime();
+          return;
+        }
+
+        currentQuery = query;
+        selectedLanguage = null;
+        directoryMode = false;
+        isRealtimeFiltered = false;
+        resultsTable.classList.remove("directory-table");
+
+        // Show status and hide results
+        searchStatus.classList.remove("hidden");
+        document.getElementById("resultsContainer").classList.add("hidden");
+        hideAllNotices();
+        showMoreBtn.classList.add("hidden");
+        pigsBox.classList.add("hidden");
+        document.getElementById("guidanceContainer").classList.add("hidden");
+
+        try {
+          const requestedTopK = getTopK();
+          const selectedLang = languageSelect.value;
+          const fetchPromise = fetch(`${window.API_BASE_URL || ""}/api/search?top_k=${requestedTopK}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: searchMode === "nco" ? formatNcoCode(query) : query,
+              user_language: selectedLang,
+              search_mode: searchMode,
+              top_k: requestedTopK,
+            }),
+          }).then((res) => res.json());
+
+          const delayPromise = new Promise((resolve) =>
+            setTimeout(resolve, 1000)
+          );
+
+          // Wait for both the fetch and the delay
+          const [data] = await Promise.all([fetchPromise, delayPromise]);
+
+          // Hide status and show results
+          searchStatus.classList.add("hidden");
+          document
+            .getElementById("resultsContainer")
+            .classList.remove("hidden");
+
+          // Render pipeline status badges
+          const badgesContainer = document.getElementById("pipelineBadges");
+          if (badgesContainer) {
+            badgesContainer.innerHTML = "";
+            
+            if (data.transliteration_notice) {
+              const badge = document.createElement("span");
+              badge.className = "pipeline-badge badge-transliterated";
+              badge.innerHTML = `<i class="fas fa-keyboard"></i> Auto-Transliterated`;
+              badgesContainer.appendChild(badge);
+            }
+            
+            if (data.translation_notice && searchMode !== "nco") {
+              const badge = document.createElement("span");
+              badge.className = "pipeline-badge badge-translated";
+              badge.innerHTML = `<i class="fas fa-globe"></i> Auto-Translated`;
+              badgesContainer.appendChild(badge);
+            }
+            
+            if (data.spelling_correction) {
+              const badge = document.createElement("span");
+              badge.className = "pipeline-badge badge-corrected";
+              badge.innerHTML = `<i class="fas fa-spell-check"></i> Auto-Corrected`;
+              badgesContainer.appendChild(badge);
+            }
+          }
+
+          // Show transliteration notice if transliteration occurred
+          if (data.transliteration_notice) {
+            const notice = data.transliteration_notice;
+            const xlitText = document.getElementById("transliterationText");
+            xlitText.innerHTML = `<strong>Transliterated Roman Script:</strong> "${notice.original}" → "${notice.transliterated}"`;
+            document
+              .getElementById("transliterationNotice")
+              .classList.remove("hidden");
+          }
+
+          // Show translation notice if translation occurred
+          if (data.translation_notice && searchMode !== "nco") {
+            const notice = data.translation_notice;
+            const translationText = document.getElementById("translationText");
+            translationText.innerHTML = `<strong>Translated:</strong> "${notice.original}" → "${notice.translated}"`;
+            document
+              .getElementById("translationNotice")
+              .classList.remove("hidden");
+          }
+
+          // Show spelling correction notice if spelling correction occurred
+          if (data.spelling_correction) {
+            const correction = data.spelling_correction;
+            const spellingText = document.getElementById("spellingText");
+            spellingText.innerHTML = `<strong>Spelling Corrected:</strong> "${correction.original}" → "${correction.corrected}"`;
+            document
+              .getElementById("spellingNotice")
+              .classList.remove("hidden");
+          }
+
+          let hasGuidance = false;
+          // Handle suggestions
+          if (data.suggestion) {
+            suggestionBox.innerHTML = `<strong>Search Help</strong><br>${data.suggestion}`;
+            suggestionBox.classList.remove("hidden");
+            hasGuidance = true;
+          } else {
+            suggestionBox.classList.add("hidden");
+          }
+
+          // --- PIGS: Prompt Intelligence & Guidance System ---
+          if (
+            data.pigs &&
+            data.pigs.suggestions &&
+            data.pigs.suggestions.length > 0
+          ) {
+            let pigsHtml = `<strong>Prompt Intelligence & Guidance System</strong><br>`;
+            if (
+              data.pigs.prompt_examples &&
+              data.pigs.prompt_examples.length > 0
+            ) {
+              pigsHtml += `<div style="margin-top:8px;"><strong>Related prompt examples:</strong></div>`;
+              pigsHtml += `<ul style="margin-top:6px; padding-left:18px;">`;
+              data.pigs.prompt_examples.forEach((prompt) => {
+                pigsHtml += `<li>"${prompt}"</li>`;
+              });
+              pigsHtml += `</ul>`;
+            }
+            pigsHtml += `<div style="margin-top:8px;"><strong>Why these results:</strong></div>`;
+            pigsHtml += `<ul style="margin-top:8px; padding-left:18px;">`;
+            data.pigs.suggestions.forEach((s) => {
+              pigsHtml += `<li>${s}</li>`;
+            });
+            pigsHtml += `</ul>`;
+
+            pigsBox.innerHTML = pigsHtml;
+            pigsBox.classList.remove("hidden");
+            hasGuidance = true;
+          } else {
+            pigsBox.classList.add("hidden");
+          }
+
+          const guidanceContainer = document.getElementById("guidanceContainer");
+          if (hasGuidance) {
+            guidanceContainer.classList.remove("hidden");
+            guidanceContainer.removeAttribute("open");
+          } else {
+            guidanceContainer.classList.add("hidden");
+          }
+
+          let results = data.results || [];
+          if (searchMode !== "nco" && results.length > 0) {
+            const topScore = results[0].final_score || 0;
+            if (topScore < 0.60) {
+              results = [];
+            }
+          }
+
+          if (results.length > 0) {
+            allResults = applyHierarchicalFilters(results);
+            lastRequestedTopK = data.top_k || getTopK();
+            lastReturnedCount = data.returned_count || results.length;
+            displayedCount = 0;
+            displayResults(false);
+          } else {
+            allResults = [];
+            displayResults(false);
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          searchStatus.classList.add("hidden");
+          document.getElementById("resultsContainer").classList.remove("hidden");
+          resultsBody.innerHTML = `
+            <tr class="no-results-row">
+              <td colspan="5" style="background: transparent !important; border: none !important; padding: 0 !important;">
+                <div class="no-results-container" style="padding: 60px 20px; text-align: center; color: #dc2626;">
+                  <div class="no-results-icon-wrap" style="font-size: 54px; color: #fca5a5; margin-bottom: 16px; display: inline-block;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </div>
+                  <h3 style="font-size: 18px; font-weight: 700; color: #991b1b; margin: 0 0 8px;">Search Error</h3>
+                  <p style="font-size: 14px; max-width: 420px; margin: 0 auto 20px; line-height: 1.5; color: #b91c1c;">
+                    An error occurred while performing the search. Please try again.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      function clearSearchAndFilters() {
+        const searchInput = document.getElementById("occupationSearch");
+        if (searchInput) {
+          searchInput.value = "";
+          searchInput.dispatchEvent(new Event('input'));
+        }
+        
+        const ncoDigits = Array.from(document.querySelectorAll(".nco-digit"));
+        ncoDigits.forEach(input => {
+          input.value = "";
+        });
+        
+        if (ncoDigits.length > 0) {
+          ncoDigits[0].dispatchEvent(new Event('input'));
+        }
+
+        const resetBtn = document.getElementById("resetFiltersBtn");
+        if (resetBtn) {
+          resetBtn.click();
+        }
+      }
+
+      function displayResults(append) {
+        if (directoryMode) {
+          displayDirectoryResults(append);
+          return;
+        }
+
+        if (!append) {
+          setSearchTableHeader();
+          resultsBody.innerHTML = "";
+          displayedCount = 0;
+
+          // Update the title based on first result's family
+          if (allResults.length > 0) {
+            const firstResult = allResults[0];
+            const family = firstResult.details?.family || "Search Results";
+            document.getElementById(
+              "resultsTitle"
+            ).textContent = `Family: ${family}`;
+          } else {
+            document.getElementById("resultsTitle").textContent =
+              "Search Results";
+          }
+        }
+
+        if (allResults.length === 0) {
+          resultsBody.innerHTML = `
+            <tr class="no-results-row">
+              <td colspan="5" style="background: transparent !important; border: none !important; padding: 0 !important;">
+                <div class="no-results-container" style="padding: 60px 20px; text-align: center; color: #64748b;">
+                  <div class="no-results-icon-wrap" style="font-size: 54px; color: #cbd5e1; margin-bottom: 16px; animation: emptyBounce 2s infinite ease-in-out; display: inline-block;">
+                    <i class="fas fa-search-minus"></i>
+                  </div>
+                  <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 8px;">No Occupations Found</h3>
+                  <p style="font-size: 14px; max-width: 420px; margin: 0 auto 20px; line-height: 1.5; color: #64748b;">
+                    We couldn't find any results matching your search terms. Try checking your spelling or typing a different keyword.
+                  </p>
+                  <button onclick="clearSearchAndFilters()" class="reset-filters-btn" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #003366; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0 auto;">
+                    <i class="fas fa-undo"></i> Reset Search & Filters
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          document.getElementById("resultsCount").textContent = "0 of 0";
+          showMoreBtn.classList.add("hidden");
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const newLimit = allResults.length;
+
+        for (
+          let i = displayedCount;
+          i < newLimit && i < allResults.length;
+          i++
+        ) {
+          const result = allResults[i];
+          const row = document.createElement("tr");
+          row.className = "clickable-row result-row-animate";
+          row.style.animationDelay = `${(i - displayedCount) * 40}ms`;
+          const d = result.details || {};
+          const score = result.final_score || 0;
+          const progressStage = getProgressStage(score);
+          const signalIcon = createSignalIcon(progressStage);
+
+          row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${result.occupation_title || ""}</td>
+                    <td>${formatNcoCode(result.nco_code || "")}</td>
+                    <td>${signalIcon}</td>
+                    <td><button class="btn-detail" onclick="event.stopPropagation();" style="padding: 6px 12px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Details</button></td>
+                `;
+          row.addEventListener("click", () => showDetails(result));
+          row
+            .querySelector(".btn-detail")
+            .addEventListener("click", () => showDetails(result));
+          fragment.appendChild(row);
+        }
+        resultsBody.appendChild(fragment);
+        displayedCount = newLimit;
+
+        document.getElementById("resultsCount").textContent =
+          allResults.length > 0
+            ? `${allResults.length} of Top ${lastRequestedTopK}`
+            : "";
+
+        if (displayedCount < allResults.length) {
+          showMoreBtn.classList.remove("hidden");
+        } else {
+          showMoreBtn.classList.add("hidden");
+        }
+      }
+
+      function displayDirectoryResults(append) {
+        if (!append) {
+          setDirectoryTableHeader();
+          resultsBody.innerHTML = "";
+          displayedCount = 0;
+          if (isRealtimeFiltered) {
+            document.getElementById("resultsTitle").textContent =
+              `Matching Occupations`;
+          } else {
+            document.getElementById("resultsTitle").textContent =
+              "National Classification of Occupations";
+          }
+        }
+
+        if (allResults.length === 0) {
+          resultsBody.innerHTML = `
+            <tr class="no-results-row">
+              <td colspan="8" style="background: transparent !important; border: none !important; padding: 0 !important;">
+                <div class="no-results-container" style="padding: 60px 20px; text-align: center; color: #64748b;">
+                  <div class="no-results-icon-wrap" style="font-size: 54px; color: #cbd5e1; margin-bottom: 16px; animation: emptyBounce 2s infinite ease-in-out; display: inline-block;">
+                    <i class="fas fa-search-minus"></i>
+                  </div>
+                  <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 8px;">No Occupations Found</h3>
+                  <p style="font-size: 14px; max-width: 440px; margin: 0 auto 20px; line-height: 1.5; color: #64748b;">
+                    We couldn't find any results matching your filters or code input. Try clearing some selections or checking your NCO code.
+                  </p>
+                  <button onclick="clearSearchAndFilters()" class="reset-filters-btn" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #003366; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin: 0 auto;">
+                    <i class="fas fa-undo"></i> Reset Search & Filters
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          document.getElementById("resultsCount").textContent = "0 of 0";
+          showMoreBtn.classList.add("hidden");
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const newLimit = Math.min(
+          displayedCount + directoryRowsPerPage,
+          allResults.length
+        );
+
+        for (let i = displayedCount; i < newLimit; i++) {
+          const result = allResults[i];
+          const d = result.details || {};
+          const family = d.family || "Unspecified";
+          const previousFamily =
+            i > 0 ? allResults[i - 1]?.details?.family || "Unspecified" : "";
+
+          if (i === 0 || family !== previousFamily) {
+            const familyRow = document.createElement("tr");
+            familyRow.className = "family-divider-row";
+            familyRow.innerHTML = `<td colspan="8">Family: ${family}</td>`;
+            fragment.appendChild(familyRow);
+          }
+
+          const row = document.createElement("tr");
+          row.className = "clickable-row";
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${result.occupation_title || ""}</td>
+            <td>${formatNcoCode(result.nco_code || "")}</td>
+            <td>${d.nco_2004_code || ""}</td>
+            <td>${d.division || ""}</td>
+            <td>${d.sub_division || ""}</td>
+            <td>${d.group || ""}</td>
+            <td>${d.family || ""}</td>
+          `;
+          row.addEventListener("click", () => showDetails(result));
+          fragment.appendChild(row);
+        }
+
+        resultsBody.appendChild(fragment);
+        displayedCount = newLimit;
+        document.getElementById("resultsCount").textContent =
+          `${displayedCount} of ${allResults.length}`;
+
+        if (displayedCount < allResults.length) {
+          showMoreBtn.textContent = "Show More";
+          showMoreBtn.classList.remove("hidden");
+        } else {
+          showMoreBtn.classList.add("hidden");
+        }
+      }
+
+      // --- Modal Logic ---
+      const modal = document.getElementById("detailModal");
+      const modalBody = document.getElementById("modalBody");
+      const closeModalBtn = document.querySelector(".close-modal");
+
+      function showDetails(job) {
+        const d = job.details || {};
+        const score = job.final_score || 0;
+        const progressStage = getProgressStage(score);
+        const signalIcon = createSignalIcon(progressStage);
+        const percentageText = score ? `${(score * 100).toFixed(1)}%` : "N/A";
+
+        modalBody.innerHTML = `
+          <h2>${job.occupation_title}</h2>
+          
+          <div class="modal-body-content">
+            <div class="modal-info-grid">
+              <div class="modal-info-item">
+                <div class="modal-info-item-label">NCO 2015 Code</div>
+                <div class="modal-info-item-value">${
+                  job.nco_code || "N/A"
+                }</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="modal-info-item-label">Match Level</div>
+                <div class="modal-info-item-value">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    ${signalIcon}
+                    <span>${percentageText}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            ${
+              d.nco_2004_code
+                ? `
+            <div class="modal-info-item" style="margin-bottom: 15px;">
+              <div class="modal-info-item-label">NCO 2004 Code</div>
+              <div class="modal-info-item-value">${d.nco_2004_code}</div>
+            </div>
+            `
+                : ""
+            }
+
+            <h4>Occupational Hierarchy</h4>
+            <p><strong>Division:</strong> ${d.division || "N/A"}</p>
+            <p><strong>Sub-Division:</strong> ${d.sub_division || "N/A"}</p>
+            <p><strong>Group:</strong> ${d.group || "N/A"}</p>
+            <p><strong>Family:</strong> ${d.family || "N/A"}</p>
+
+            <h4 style="margin-top: 20px;">Description</h4>
+            <p>${d.occupation_description || "No description available."}</p>
+          </div>
+        `;
+        modal.style.display = "block";
+      }
+
+      closeModalBtn.onclick = () => {
+        modal.style.display = "none";
+      };
+
+      window.onclick = (event) => {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+
+      // --- Voice & Translation Logic ---
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+      function showMicError(message) {
+        transcriptionPreview.innerHTML = `<em style="color: red;">${message}</em>`;
+      }
+
+      if (recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+        let isListening = false;
+
+        micBtn.addEventListener("click", () => {
+          if (isListening) {
+            recognition.stop();
+            isListening = false;
+          } else {
+            recognition.lang = languageSelect.value;
+            recognition.start();
+            isListening = true;
+          }
+        });
+
+        recognition.onstart = () => {
+          const micIcon = micBtn.querySelector("i");
+          micIcon.classList.remove("fa-microphone");
+          micIcon.classList.add("fa-microphone-slash");
+          micBtn.classList.add("active");
+          transcriptionPreview.innerHTML = "<em>Listening...</em>";
+          isListening = true;
+        };
+
+        recognition.onend = () => {
+          const micIcon = micBtn.querySelector("i");
+          micIcon.classList.remove("fa-microphone-slash");
+          micIcon.classList.add("fa-microphone");
+          micBtn.classList.remove("active");
+          transcriptionPreview.innerHTML = "";
+          isListening = false;
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event.error);
+          const micIcon = micBtn.querySelector("i");
+          micIcon.classList.remove("fa-microphone-slash");
+          micIcon.classList.add("fa-microphone");
+          micBtn.classList.remove("active");
+          transcriptionPreview.innerHTML = `<em style="color: red;">Error: ${event.error}</em>`;
+          isListening = false;
+        };
+
+        recognition.onresult = async (event) => {
+          let interimTranscript = "";
+          let finalTranscript = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          transcriptionPreview.innerHTML =
+            finalTranscript +
+            '<span class="interim">' +
+            interimTranscript +
+            "</span>";
+
+          if (finalTranscript) {
+            const translatedText = await translateText(
+              finalTranscript,
+              "auto",
+              "en"
+            );
+            occupationSearch.value = translatedText;
+            performSearch(false);
+            // Allow listening again after search completes
+            isListening = false;
+          }
+        };
+      } else {
+        micBtn.classList.add("disabled");
+        micBtn.setAttribute("aria-disabled", "true");
+        micBtn.title =
+          "Voice search not supported in this browser. Use Chrome or Edge over HTTPS or localhost.";
+        micBtn.addEventListener("click", () => {
+          showMicError(
+            "Voice search not supported here. Try Chrome/Edge on HTTPS or localhost."
+          );
+        });
+      }
+
+      async function translateText(text, source, target) {
+        try {
+          const response = await fetch(window.API_BASE_URL + "/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: text,
+              source_lang: source,
+              target_lang: target,
+              preferred_service: "lingua", // Can be changed to "bhashini" if needed
+            }),
+          });
+          const data = await response.json();
+          return data.translated_text || text;
+        } catch (e) {
+          console.error("Translation error", e);
+          return text;
+        }
+      }
+
+      // --- UI Interaction Logic ---
+      const translationBtn = document.getElementById("translationBtn");
+      const languageSelectDropdown = document.getElementById("languageSelect");
+
+      translationBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent the click from closing the dropdown immediately
+        languageSelectDropdown.classList.toggle("show");
+      });
+
+      // Close dropdown if clicked outside
+      window.addEventListener("click", (e) => {
+        if (
+          !translationBtn.contains(e.target) &&
+          !languageSelectDropdown.contains(e.target)
+        ) {
+          languageSelectDropdown.classList.remove("show");
+        }
+      });
+
+      function formatNcoCode(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        const compact = raw.replace(/\s+/g, "");
+        const parts = compact.split(".");
+        const digits = (s) => (s || "").replace(/\D/g, "");
+
+        if (parts.length === 1) {
+          const d = digits(parts[0]);
+          if (d.length === 8) return `${d.slice(0, 4)}.${d.slice(4, 8)}`;
+          if (d.length === 4) return `${d}.0000`;
+          if (d.length > 4 && d.length < 8) {
+            return `${d.slice(0, 4)}.${d.slice(4).padEnd(4, "0").slice(0, 4)}`;
+          }
+          if (d.length > 8) return `${d.slice(0, 4)}.${d.slice(4, 8)}`;
+          return raw;
+        }
+
+        const left = digits(parts[0]).slice(0, 4).padEnd(4, "0");
+        const right = digits(parts[1]).slice(0, 4).padEnd(4, "0");
+        return `${left}.${right}`;
+      }
+
+      // =====================================================================
+      // HIERARCHICAL FILTERS ENGINE
+      // =====================================================================
+      function buildHierarchyData() {
+        divisionToSubDivs = {};
+        subDivToGroups = {};
+        groupToFamilies = {};
+        allDivisions.clear();
+        allSubDivisions.clear();
+        allGroups.clear();
+        allFamilies.clear();
+
+        directoryResults.forEach(r => {
+          const d = r.details || {};
+          const div = d.division || "Unspecified";
+          const sub = d.sub_division || "Unspecified";
+          const grp = d.group || "Unspecified";
+          const fam = d.family || "Unspecified";
+
+          allDivisions.add(div);
+          allSubDivisions.add(sub);
+          allGroups.add(grp);
+          allFamilies.add(fam);
+
+          if (!divisionToSubDivs[div]) divisionToSubDivs[div] = new Set();
+          divisionToSubDivs[div].add(sub);
+
+          if (!subDivToGroups[sub]) subDivToGroups[sub] = new Set();
+          subDivToGroups[sub].add(grp);
+
+          if (!groupToFamilies[grp]) groupToFamilies[grp] = new Set();
+          groupToFamilies[grp].add(fam);
+        });
+      }
+
+      function getValidSubDivisions() {
+        if (selectedDivisions.size === 0) {
+          return allSubDivisions;
+        }
+        const valid = new Set();
+        selectedDivisions.forEach(div => {
+          if (divisionToSubDivs[div]) {
+            divisionToSubDivs[div].forEach(sub => valid.add(sub));
+          }
+        });
+        return valid;
+      }
+
+      function getValidGroups() {
+        const validSubDivs = getValidSubDivisions();
+        
+        if (selectedSubDivisions.size === 0) {
+          if (selectedDivisions.size === 0) {
+            return allGroups;
+          }
+          const valid = new Set();
+          validSubDivs.forEach(sub => {
+            if (subDivToGroups[sub]) {
+              subDivToGroups[sub].forEach(grp => valid.add(grp));
+            }
+          });
+          return valid;
+        }
+        
+        const valid = new Set();
+        selectedSubDivisions.forEach(sub => {
+          if (subDivToGroups[sub]) {
+            subDivToGroups[sub].forEach(grp => valid.add(grp));
+          }
+        });
+        return valid;
+      }
+
+      function getValidFamilies() {
+        const validGroups = getValidGroups();
+        
+        if (selectedGroups.size === 0) {
+          if (selectedSubDivisions.size === 0 && selectedDivisions.size === 0) {
+            return allFamilies;
+          }
+          const valid = new Set();
+          validGroups.forEach(grp => {
+            if (groupToFamilies[grp]) {
+              groupToFamilies[grp].forEach(fam => valid.add(fam));
+            }
+          });
+          return valid;
+        }
+        
+        const valid = new Set();
+        selectedGroups.forEach(grp => {
+          if (groupToFamilies[grp]) {
+            groupToFamilies[grp].forEach(fam => valid.add(fam));
+          }
+        });
+        return valid;
+      }
+
+      function pruneFilters() {
+        if (selectedDivisions.size > 0) {
+          const validSubDivs = new Set();
+          selectedDivisions.forEach(div => {
+            if (divisionToSubDivs[div]) {
+              divisionToSubDivs[div].forEach(sub => validSubDivs.add(sub));
+            }
+          });
+          selectedSubDivisions.forEach(sub => {
+            if (!validSubDivs.has(sub)) selectedSubDivisions.delete(sub);
+          });
+        }
+
+        if (selectedSubDivisions.size > 0) {
+          const validGroups = new Set();
+          selectedSubDivisions.forEach(sub => {
+            if (subDivToGroups[sub]) {
+              subDivToGroups[sub].forEach(grp => validGroups.add(grp));
+            }
+          });
+          selectedGroups.forEach(grp => {
+            if (!validGroups.has(grp)) selectedGroups.delete(grp);
+          });
+        } else if (selectedDivisions.size > 0) {
+          const validSubDivs = new Set();
+          selectedDivisions.forEach(div => {
+            if (divisionToSubDivs[div]) {
+              divisionToSubDivs[div].forEach(sub => validSubDivs.add(sub));
+            }
+          });
+          const validGroups = new Set();
+          validSubDivs.forEach(sub => {
+            if (subDivToGroups[sub]) {
+              subDivToGroups[sub].forEach(grp => validGroups.add(grp));
+            }
+          });
+          selectedGroups.forEach(grp => {
+            if (!validGroups.has(grp)) selectedGroups.delete(grp);
+          });
+        }
+
+        if (selectedGroups.size > 0) {
+          const validFamilies = new Set();
+          selectedGroups.forEach(grp => {
+            if (groupToFamilies[grp]) {
+              groupToFamilies[grp].forEach(fam => validFamilies.add(fam));
+            }
+          });
+          selectedFamilies.forEach(fam => {
+            if (!validFamilies.has(fam)) selectedFamilies.delete(fam);
+          });
+        } else if (selectedSubDivisions.size > 0) {
+          const validGroups = new Set();
+          selectedSubDivisions.forEach(sub => {
+            if (subDivToGroups[sub]) {
+              subDivToGroups[sub].forEach(grp => validGroups.add(grp));
+            }
+          });
+          const validFamilies = new Set();
+          validGroups.forEach(grp => {
+            if (groupToFamilies[grp]) {
+              groupToFamilies[grp].forEach(fam => validFamilies.add(fam));
+            }
+          });
+          selectedFamilies.forEach(fam => {
+            if (!validFamilies.has(fam)) selectedFamilies.delete(fam);
+          });
+        } else if (selectedDivisions.size > 0) {
+          const validSubDivs = new Set();
+          selectedDivisions.forEach(div => {
+            if (divisionToSubDivs[div]) {
+              divisionToSubDivs[div].forEach(sub => validSubDivs.add(sub));
+            }
+          });
+          const validGroups = new Set();
+          validSubDivs.forEach(sub => {
+            if (subDivToGroups[sub]) {
+              subDivToGroups[sub].forEach(grp => validGroups.add(grp));
+            }
+          });
+          const validFamilies = new Set();
+          validGroups.forEach(grp => {
+            if (groupToFamilies[grp]) {
+              groupToFamilies[grp].forEach(fam => validFamilies.add(fam));
+            }
+          });
+          selectedFamilies.forEach(fam => {
+            if (!validFamilies.has(fam)) selectedFamilies.delete(fam);
+          });
+        }
+      }
+
+      function applyHierarchicalFilters(list) {
+        let filtered = list;
+        if (selectedDivisions.size > 0) {
+          filtered = filtered.filter(r => selectedDivisions.has(r.details?.division || "Unspecified"));
+        }
+        if (selectedSubDivisions.size > 0) {
+          filtered = filtered.filter(r => selectedSubDivisions.has(r.details?.sub_division || "Unspecified"));
+        }
+        if (selectedGroups.size > 0) {
+          filtered = filtered.filter(r => selectedGroups.has(r.details?.group || "Unspecified"));
+        }
+        if (selectedFamilies.size > 0) {
+          filtered = filtered.filter(r => selectedFamilies.has(r.details?.family || "Unspecified"));
+        }
+        return filtered;
+      }
+
+      function renderDropdown(dropdownId, allOptionsSet, validOptionsSet, selectedSet, labelPrefix) {
+        const dropdownEl = document.getElementById(dropdownId);
+        const searchInput = dropdownEl.querySelector(".dropdown-search-input");
+        const optionsList = dropdownEl.querySelector(".dropdown-options-list");
+        const triggerText = dropdownEl.querySelector(".trigger-text");
+        
+        const searchQuery = (searchInput.value || "").trim().toLowerCase();
+        const validOptions = Array.from(validOptionsSet).sort();
+        const filteredOptions = validOptions.filter(opt => opt.toLowerCase().includes(searchQuery));
+        
+        if (filteredOptions.length === 0) {
+          optionsList.innerHTML = `<div class="dropdown-no-results">No matches found</div>`;
+        } else {
+          let resetHtml = "";
+          if (selectedSet.size > 0) {
+            resetHtml = `
+              <div class="dropdown-option dropdown-reset-option">
+                <i class="fas fa-undo" style="font-size: 11px;"></i>
+                <span class="dropdown-option-text">Reset Filter</span>
+              </div>
+            `;
+          }
+          
+          optionsList.innerHTML = resetHtml + filteredOptions.map(opt => {
+            const isSelected = selectedSet.has(opt);
+            return `
+              <div class="dropdown-option ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(opt)}">
+                <div class="dropdown-option-checkbox"></div>
+                <span class="dropdown-option-text" title="${escapeHtml(opt)}">${escapeHtml(opt)}</span>
+              </div>
+            `;
+          }).join("");
+          
+          // Wire up Reset button
+          const resetBtn = optionsList.querySelector(".dropdown-reset-option");
+          if (resetBtn) {
+            resetBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              selectedSet.clear();
+              pruneFilters();
+              renderAllDropdowns();
+              clearTimeout(realtimeDebounceTimer);
+              realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(), 150);
+            });
+          }
+          
+          // Wire up other options
+          optionsList.querySelectorAll(".dropdown-option:not(.dropdown-reset-option)").forEach(item => {
+            item.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const val = item.dataset.value;
+              if (selectedSet.has(val)) {
+                selectedSet.delete(val);
+              } else {
+                selectedSet.add(val);
+              }
+              pruneFilters();
+              renderAllDropdowns();
+              clearTimeout(realtimeDebounceTimer);
+              realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(), 150);
+            });
+          });
+        }
+        
+        if (selectedSet.size === 0) {
+          let pluralLabel = `All ${labelPrefix}s`;
+          if (labelPrefix === "Family") {
+            pluralLabel = "All Families";
+          } else if (labelPrefix === "Sub-Division") {
+            pluralLabel = "All Sub-Divisions";
+          }
+          triggerText.textContent = pluralLabel;
+          triggerText.style.color = "";
+          triggerText.style.fontWeight = "";
+        } else if (selectedSet.size === 1) {
+          triggerText.textContent = Array.from(selectedSet)[0];
+          triggerText.style.color = "#003366";
+          triggerText.style.fontWeight = "600";
+        } else {
+          triggerText.textContent = `${selectedSet.size} selected`;
+          triggerText.style.color = "#003366";
+          triggerText.style.fontWeight = "600";
+        }
+      }
+
+      function renderAllDropdowns() {
+        const validSubDivs = getValidSubDivisions();
+        const validGroups = getValidGroups();
+        const validFamilies = getValidFamilies();
+        
+        renderDropdown("dropdownDivision", allDivisions, allDivisions, selectedDivisions, "Division");
+        renderDropdown("dropdownSubDivision", allSubDivisions, validSubDivs, selectedSubDivisions, "Sub-Division");
+        renderDropdown("dropdownGroup", allGroups, validGroups, selectedGroups, "Group");
+        renderDropdown("dropdownFamily", allFamilies, validFamilies, selectedFamilies, "Family");
+      }
+
+      // Wire up dropdown trigger and search events
+      function initDropdownEvents() {
+        document.querySelectorAll(".custom-dropdown").forEach(dropdown => {
+          const trigger = dropdown.querySelector(".dropdown-trigger");
+          const menu = dropdown.querySelector(".dropdown-menu");
+          const searchInput = dropdown.querySelector(".dropdown-search-input");
+          
+          trigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            document.querySelectorAll(".custom-dropdown").forEach(other => {
+              if (other !== dropdown) {
+                other.classList.remove("open");
+                other.querySelector(".dropdown-menu").classList.add("hidden");
+              }
+            });
+            
+            const isOpen = dropdown.classList.toggle("open");
+            menu.classList.toggle("hidden", !isOpen);
+            if (isOpen) {
+              searchInput.focus();
+            }
+          });
+          
+          searchInput.addEventListener("input", () => {
+            const validSubDivs = getValidSubDivisions();
+            const validGroups = getValidGroups();
+            const validFamilies = getValidFamilies();
+            
+            if (dropdown.id === "dropdownDivision") {
+              renderDropdown("dropdownDivision", allDivisions, allDivisions, selectedDivisions, "Division");
+            } else if (dropdown.id === "dropdownSubDivision") {
+              renderDropdown("dropdownSubDivision", allSubDivisions, validSubDivs, selectedSubDivisions, "Sub-Division");
+            } else if (dropdown.id === "dropdownGroup") {
+              renderDropdown("dropdownGroup", allGroups, validGroups, selectedGroups, "Group");
+            } else if (dropdown.id === "dropdownFamily") {
+              renderDropdown("dropdownFamily", allFamilies, validFamilies, selectedFamilies, "Family");
+            }
+          });
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!e.target.closest(".custom-dropdown")) {
+            document.querySelectorAll(".custom-dropdown").forEach(dropdown => {
+              dropdown.classList.remove("open");
+              dropdown.querySelector(".dropdown-menu").classList.add("hidden");
+            });
+          }
+        });
+
+        document.getElementById("resetFiltersBtn").addEventListener("click", () => {
+          selectedDivisions.clear();
+          selectedSubDivisions.clear();
+          selectedGroups.clear();
+          selectedFamilies.clear();
+          document.querySelectorAll(".dropdown-search-input").forEach(input => input.value = "");
+          renderAllDropdowns();
+          clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => filterDirectoryRealtime(), 150);
+        });
+      }
+
+      // Initial load
+      updateSearchModeUI();
+      loadDirectory();
+      initDropdownEvents();
+    </script>
+  </body>
+</html>

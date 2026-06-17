@@ -1,68 +1,469 @@
-from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
+load_dotenv()  # Load .env before anything else (must be first)
+
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_cors import CORS
+from flask_compress import Compress
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 import sys
 import os
 import json
+import threading
+import time
+import hashlib
 from datetime import datetime, timezone
+import csv
+import re
+import secrets
+import io
 
 # Add scripts directory to path to import searchapp
 sys.path.append(os.path.join(os.path.dirname(__file__), 'scripts'))
 # Add utils directory to path to import prompt system
 sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
+from database import db_store
+db_store.init_db()
+
+# Auto-arrange dataset file if present in the root folder
+import shutil
+import re
+_root_csv = os.path.join(os.path.dirname(__file__), 'nco_dataset_v6_final.csv')
+_target_csv = os.path.join(os.path.dirname(__file__), 'data', 'raw', 'nco_dataset_v6_final.csv')
+if os.path.exists(_root_csv):
+    os.makedirs(os.path.dirname(_target_csv), exist_ok=True)
+    try:
+        shutil.move(_root_csv, _target_csv)
+        print(f"Automatically moved {_root_csv} to {_target_csv}")
+    except Exception as e:
+        print(f"Failed to move CSV automatically: {e}")
+
+
 
 # Load search module once at startup for performance
-import importlib.util
-spec = importlib.util.spec_from_file_location("searchapp", os.path.join(os.path.dirname(__file__), 'scripts', '06_searchapp.py'))
-if spec and spec.loader:
-    search_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(search_module)
-else:
-    raise RuntimeError("Failed to load search module")
+import utils.searchapp as search_module
 
-# Import dynamic prompt generation system
-from dynamic_prompts import generate_dynamic_prompts
+# Import PIGS — NCO-aware query guidance system
+from utils.dynamic_prompts import pigs_v2_analyze
 # Import translation service
-from translation_service import translation_service
+from utils.translation_service import translation_service
+# Import spell service
+from utils.spell_service import spell_service
+# Import IP geolocation utility
+from utils.ip_location import resolve_ip_location
+
+# Train Spello spell checker in a background thread to keep startup time to 0ms
+import threading
+threading.Thread(target=spell_service.initialize, daemon=True).start()
 
 app = Flask(__name__)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.secret_key = os.getenv("SECRET_KEY", secrets.token_hex(32))
+CORS(app)
+Compress(app)   # gzip all text/json responses automatically
 
-PROMPT_HISTORY_PATH = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'prompt_history.json')
+# ------------------------------------------------------------------
+# In-memory search result cache
+# Keyed on (translated_query, top_k, filters) — avoids re-running
+# SBERT for identical queries within the TTL window.
+# ------------------------------------------------------------------
+_search_cache: dict = {}
+_search_cache_lock = threading.Lock()
+_SEARCH_CACHE_TTL  = 300   # seconds (5 min)
+_SEARCH_CACHE_MAX  = 500   # max entries
+
+def _search_cache_key(query: str, top_k: int, filters: dict) -> str:
+    raw = f"{query.lower().strip()}|{top_k}|{json.dumps(filters or {}, sort_keys=True)}"
+    return hashlib.md5(raw.encode()).hexdigest()
+
+def _get_cached_search(key: str):
+    with _search_cache_lock:
+        entry = _search_cache.get(key)
+        if entry and (time.monotonic() - entry["ts"]) < _SEARCH_CACHE_TTL:
+            return entry["data"]
+    return None
+
+def _set_cached_search(key: str, data: list):
+    with _search_cache_lock:
+        if len(_search_cache) >= _SEARCH_CACHE_MAX:
+            oldest = min(_search_cache, key=lambda k: _search_cache[k]["ts"])
+            del _search_cache[oldest]
+        _search_cache[key] = {"ts": time.monotonic(), "data": data}
+
+CSV_PATH = os.path.join(os.path.dirname(__file__), 'data', 'raw', 'nco_dataset_v6_final.csv')
+ASSET_VERSION = os.getenv("ASSET_VERSION", "8")
+STATIC_CACHE_SECONDS = int(os.getenv("STATIC_CACHE_SECONDS", "86400"))
 
 
-def _ensure_prompt_history_file():
-    os.makedirs(os.path.dirname(PROMPT_HISTORY_PATH), exist_ok=True)
-    if not os.path.exists(PROMPT_HISTORY_PATH):
-        with open(PROMPT_HISTORY_PATH, 'w', encoding='utf-8') as f:
-            f.write('[]')
+@app.context_processor
+def inject_asset_version():
+    return {"asset_version": ASSET_VERSION}
+
+
+@app.after_request
+def add_performance_headers(response):
+    # Security headers
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.pop("X-XSS-Protection", None)
+
+    # Cache static assets — versioned files get immutable/1-year, others use configured TTL
+    if request.path.startswith("/static/"):
+        if request.args.get("v"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = f"public, max-age={STATIC_CACHE_SECONDS}"
+    return response
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
+
+@app.route('/.well-known/appspecific/com.chrome.devtools.json')
+def chrome_devtools_json():
+    """Suppress Chrome DevTools discovery probe — harmless 204 instead of noisy 404."""
+    return '', 204
+
+
+def _get_admin_setting(key):
+    return db_store.get_admin_setting(key)
+
+
+def _set_admin_setting(key, value):
+    db_store.set_admin_setting(key, value)
+
+
+_ADMIN_USERNAME = "admin"
+
+
+def _hash_password(password: str) -> str:
+    """Hash a password using Werkzeug PBKDF2-SHA256. Never log the return value."""
+    return generate_password_hash(password)
+
+
+def _verify_password(password: str, stored_hash: str) -> bool:
+    """
+    Timing-safe password verification via Werkzeug.
+    check_password_hash uses hmac.compare_digest internally.
+    """
+    if not stored_hash:
+        return False
+    return check_password_hash(stored_hash, password)
+
+
+def _require_admin_password(password: str):
+    """
+    Fetch the hash for the single admin account from admin_users and verify.
+    Returns (True, None) on success, (False, error_message) on failure.
+    """
+    if not password or not str(password).strip():
+        return False, "Password is required"
+    stored = db_store.get_admin_password_hash(_ADMIN_USERNAME)
+    if not stored:
+        return False, "Admin account not found"
+    if _verify_password(password, stored):
+        return True, None
+    return False, "Invalid password"
+
+
+def _ensure_admin_account():
+    """
+    Guarantee exactly one admin account exists in admin_users.
+    If the table is empty (first deploy), a cryptographically random password
+    is generated, its hash stored in PostgreSQL, and the plaintext printed
+    ONCE to stdout so the operator can capture it.
+    No password is ever written to source code, config files, or env vars.
+    """
+    if db_store.admin_user_exists():
+        return
+    raw_password = secrets.token_urlsafe(16)
+    db_store.create_admin_user(_ADMIN_USERNAME, _hash_password(raw_password))
+    print("\n" + "=" * 62)
+    print("  ADMIN ACCOUNT CREATED (first-run setup)")
+    print(f"  Username : {_ADMIN_USERNAME}")
+    print(f"  Password : {raw_password}")
+    print("  Save this password — it will NOT be shown again.")
+    print("=" * 62 + "\n")
+
+_ensure_admin_account()
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("admin_authenticated"):
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_api_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("admin_authenticated"):
+            return jsonify({"error": "Authentication required", "redirect": "/admin/login"}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 
 def _read_prompt_history():
-    _ensure_prompt_history_file()
-    try:
-        with open(PROMPT_HISTORY_PATH, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return data if isinstance(data, list) else []
-    except Exception:
-        return []
+    return list(reversed(db_store.read_prompt_history(limit=5000)))
 
 
 def _write_prompt_history(history):
-    os.makedirs(os.path.dirname(PROMPT_HISTORY_PATH), exist_ok=True)
-    tmp_path = PROMPT_HISTORY_PATH + '.tmp'
-    with open(tmp_path, 'w', encoding='utf-8') as f:
-        json.dump(history, f, indent=2, ensure_ascii=False)
-    os.replace(tmp_path, PROMPT_HISTORY_PATH)
+    # Prompt history is append-only in PostgreSQL. This function remains for
+    # compatibility with older call sites.
+    return None
 
 
 def _append_prompt_history_entry(entry):
-    history = _read_prompt_history()
-    history.append(entry)
-    if len(history) > 5000:
-        history = history[-5000:]
-    _write_prompt_history(history)
+    db_store.append_prompt_history(entry)
+
+
+def _safe_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _normalize_nco_code(value):
+    raw = _safe_text(value)
+    if not raw:
+        return ""
+    raw = raw.replace(" ", "")
+    parts = raw.split(".")
+
+    def _digits(s):
+        return re.sub(r"\D", "", s or "")
+
+    if len(parts) == 1:
+        digits = _digits(parts[0])
+        if len(digits) == 8:
+            return f"{digits[:4]}.{digits[4:8]}"
+        if len(digits) == 4:
+            return f"{digits}.0000"
+        if 4 < len(digits) < 8:
+            return f"{digits[:4]}.{digits[4:].ljust(4, '0')[:4]}"
+        if len(digits) > 8:
+            return f"{digits[:4]}.{digits[4:8]}"
+        return raw
+
+    left = _digits(parts[0])
+    right = _digits(parts[1] if len(parts) > 1 else "")
+    left = left[:4].ljust(4, "0")
+    right = right[:4].ljust(4, "0")
+    return f"{left}.{right}"
+
+
+def _format_nco_2004(value):
+    raw = _safe_text(value)
+    if not raw:
+        return ""
+    raw = raw.replace(" ", "")
+    parts = raw.split(".")
+
+    def _digits(s):
+        return re.sub(r"\D", "", s or "")
+
+    if len(parts) == 1:
+        digits = _digits(parts[0])
+        if len(digits) == 6:
+            return f"{digits[:4]}.{digits[4:6]}"
+        if len(digits) == 4:
+            return f"{digits}.00"
+        if 4 < len(digits) < 6:
+            return f"{digits[:4]}.{digits[4:].ljust(2, '0')[:2]}"
+        if len(digits) > 6:
+            return f"{digits[:4]}.{digits[4:6]}"
+        return raw
+
+    left = _digits(parts[0])
+    right = _digits(parts[1] if len(parts) > 1 else "")
+    left = left[:4].ljust(4, "0")
+    right = right[:2].ljust(2, "0")
+    return f"{left}.{right}"
+
+
+def _parse_nco_2015(value):
+    raw = _safe_text(value).replace(" ", "")
+    if not raw:
+        return "", "NCO 2015 code is required"
+    m = re.fullmatch(r"(\d{4})\.(\d{4})", raw)
+    if not m:
+        return "", "Invalid NCO 2015 format. Use XXXX.XXXX"
+    return f"{m.group(1)}.{m.group(2)}", None
+
+
+def _parse_nco_2004(value, required=False):
+    raw = _safe_text(value).replace(" ", "")
+    if not raw:
+        if required:
+            return "", "NCO 2004 code is required"
+        return "", None
+    m = re.fullmatch(r"(\d{4})\.(\d{2})", raw)
+    if not m:
+        return "", "Invalid NCO 2004 format. Use XXXX.XX"
+    return f"{m.group(1)}.{m.group(2)}", None
+
+
+def _load_csv_rows():
+    return db_store.load_csv_rows()
+
+
+def _write_csv_rows(fieldnames, rows):
+    # Occupations are now stored directly in PostgreSQL through insert/update/delete helpers.
+    return None
+
+
+def _build_documents_and_metadata(rows):
+    documents = []
+    metadata = []
+    for idx, row in enumerate(rows):
+        row_id = int(row.get("_row_id") or idx)
+        doc = f"""
+Occupation Title: {_safe_text(row.get('Occupational Title'))}
+NCO 2015 Code: {_safe_text(row.get('NCO 2015'))}
+
+Hierarchy:
+Division: {_safe_text(row.get('Division'))}
+Sub Division: {_safe_text(row.get('Sub Division'))}
+Group: {_safe_text(row.get('Group'))}
+Family: {_safe_text(row.get('Family'))}
+
+Occupation Description:
+{_safe_text(row.get('Occupation Description'))}
+
+Family Description:
+{_safe_text(row.get('Family Description'))}
+
+Group Description:
+{_safe_text(row.get('Group Description'))}
+""".strip()
+        documents.append(doc)
+        metadata.append({
+            "row_id": row_id,
+            "nco_2015": _safe_text(row.get("NCO 2015")),
+            "occupation_title": _safe_text(row.get("Occupational Title")),
+        })
+    return documents, metadata
+
+
+def _rebuild_search_assets(rows):
+    documents, metadata = _build_documents_and_metadata(rows)
+    db_store.save_search_documents(documents, metadata)
+
+    # Save documents and metadata JSON files locally as well
+    processed_dir = os.path.join(os.path.dirname(__file__), 'data', 'processed')
+    os.makedirs(processed_dir, exist_ok=True)
+    with open(os.path.join(processed_dir, 'nco_documents.json'), 'w', encoding='utf-8') as f:
+        json.dump(documents, f, indent=2, ensure_ascii=False)
+    with open(os.path.join(processed_dir, 'nco_metadata.json'), 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2, ensure_ascii=False)
+
+    gn = {}
+    for idx, item in enumerate(metadata):
+        code = item["nco_2015"]
+        desc = documents[idx].lower() if idx < len(documents) else ""
+        words = re.findall(r"\b[a-z]{3,}\b", desc)
+        keywords = list(set(words))
+        sector = "unknown"
+        if "division:" in desc:
+            lines = desc.split("\n")
+            for line in lines:
+                if line.strip().startswith("division:"):
+                    sector = line.split(":", 1)[1].strip().title()
+                    break
+        gn[code] = {"sector": sector, "keywords": keywords}
+    db_store.save_graph(gn)
+
+    # Save graph JSON file locally as well
+    with open(os.path.join(processed_dir, 'nco_graph.json'), 'w', encoding='utf-8') as f:
+        json.dump(gn, f, indent=2, ensure_ascii=False)
+
+    from sentence_transformers import SentenceTransformer
+    import numpy as np
+    import faiss
+
+    model = SentenceTransformer("intfloat/multilingual-e5-base")
+    prefixed_docs = ["passage: " + doc for doc in documents]
+    embeddings = model.encode(
+        prefixed_docs,
+        show_progress_bar=False,
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+    db_store.save_embeddings(embeddings)
+
+    dim = embeddings.shape[1]
+    index = faiss.IndexFlatIP(dim)
+    index.add(embeddings)
+    serialized_index = faiss.serialize_index(index)
+    db_store.save_asset("nco_faiss.index", bytes(serialized_index), "application/x-faiss")
+    if hasattr(search_module, "reload_from_db"):
+        search_module.reload_from_db()
+
+
+def _build_result_from_row(row, row_id):
+    return {
+        "occupation_title": _safe_text(row.get("Occupational Title")),
+        "row_id": row_id,
+        "nco_code": _normalize_nco_code(row.get("NCO 2015")),
+        "semantic_score": 1.0,
+        "gn_score": 0.0,
+        "final_score": 1.0,
+        "details": {
+            "nco_2004_code": _format_nco_2004(row.get("NCO 2004")),
+            "division": _safe_text(row.get("Division")),
+            "sub_division": _safe_text(row.get("Sub Division")),
+            "group": _safe_text(row.get("Group")),
+            "family": _safe_text(row.get("Family")),
+            "occupation_description": _safe_text(row.get("Occupation Description")),
+            "family_description": _safe_text(row.get("Family Description")),
+            "group_description": _safe_text(row.get("Group Description")),
+        },
+    }
+
+
+def _search_by_nco_code(nco_query):
+    code = _normalize_nco_code(nco_query)
+    if not code:
+        return []
+    _, rows = _load_csv_rows()
+    results = []
+    for idx, row in enumerate(rows):
+        if _normalize_nco_code(row.get("NCO 2015")) == code:
+            results.append(_build_result_from_row(row, int(row.get("_row_id") or idx)))
+    return results
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if session.get("admin_authenticated"):
+        return redirect(url_for("admin_dashboard"))
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password', '').strip()
+        ok, err = _require_admin_password(password)
+        if ok:
+            session['admin_authenticated'] = True
+            return redirect(url_for("admin_dashboard"))
+        error = "Invalid password. Please try again."
+    return render_template('admin/login.html', error=error)
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_authenticated', None)
+    return redirect(url_for("admin_login"))
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    return render_template('admin/dashboard.html')
 
 @app.route('/api/search', methods=['POST'])
 def search_jobs():
@@ -70,45 +471,180 @@ def search_jobs():
     if data is None:
         return jsonify({"error": "Invalid JSON"}), 400
     query = data.get('query', '').strip()
+    user_language = data.get('user_language', None)  # User's confirmed language
+    search_mode = data.get('search_mode', 'general')
+    filters = data.get('filters', {})
+    try:
+        top_k = int(data.get('top_k', request.args.get('top_k', 5)))
+    except (TypeError, ValueError):
+        top_k = 5
+    top_k = max(1, min(top_k, 100))
+    
     try:
         if query:
-            # Use the search function for specific queries
-            results = search_module.search(query)
+            spelling_correction = None
+            was_transliterated = False
+            original_query = query
+            
+            # Determine source language code (user confirm or auto detect)
+            lang_code = None
+            if user_language and not user_language.startswith("en"):
+                lang_code = user_language.split("-")[0]
+            else:
+                # If query is typed in non-English native script, detect language code
+                detected = translation_service.detect_language(query)
+                if detected != "en":
+                    lang_code = detected
+
+            # 1. Transliteration (for Indic languages with Roman script input)
+            if lang_code:
+                if translation_service.is_roman_script(query):
+                    transliteration_result = translation_service.transliterate(query, lang_code)
+                    if transliteration_result and transliteration_result.strip().lower() != query.strip().lower():
+                        query = transliteration_result
+                        was_transliterated = True
+
+            if search_mode == "nco":
+                results = _search_by_nco_code(query)[:top_k]
+                return jsonify({
+                    "results": results,
+                    "suggestion": None,
+                    "translation_notice": None,
+                    "language_ambiguity": None,
+                    "top_k": top_k,
+                    "spelling_correction": None,
+                    "transliteration_notice": {
+                        "original": original_query,
+                        "transliterated": query
+                    } if was_transliterated else None
+                })
+
+            # 2. Translation (to English)
+            translated_query = query
+            translation_notice = None
+            language_ambiguity = None
+            
+            if lang_code:
+                try:
+                    translated_query = translation_service.translate(query, source_lang=lang_code, target_lang="en")
+                    if translated_query.lower() != query.lower():
+                        translation_notice = {
+                            "original": query,
+                            "translated": translated_query,
+                            "message": f"Query translated from original text"
+                        }
+                except Exception as ex:
+                    print(f"Translation failed: {ex}")
+
+            # 3. Spell Correction (English target vocabulary spell check)
+            # Run spell correction on the final English query
+            corrected_query = spell_service.correct(translated_query)
+            if corrected_query and corrected_query.lower() != translated_query.lower():
+                spelling_correction = {
+                    "original": translated_query,
+                    "corrected": corrected_query
+                }
+                translated_query = corrected_query
+            
+            # Use the search function — cached to avoid re-running SBERT
+            _ck = _search_cache_key(translated_query, top_k, filters)
+            results = _get_cached_search(_ck)
+            if results is None:
+                results = search_module.search(translated_query, top_k=top_k, filters=filters)
+                _set_cached_search(_ck, results)
+            for r in results:
+                if "nco_code" in r:
+                    r["nco_code"] = _normalize_nco_code(r.get("nco_code"))
+                if "details" in r and "nco_2004" in r["details"]:
+                    r["details"]["nco_2004"] = _format_nco_2004(r["details"]["nco_2004"])
+
+            # ------------------ PIGS v2 ANALYSIS ------------------
+            pigs_output = None
+            if pigs_v2_analyze and results:
+                try:
+                    pigs_output = pigs_v2_analyze(translated_query, results)
+                except Exception as e:
+                    print(f"PIGS analysis error: {e}")
+                    pigs_output = None
 
             try:
+                detected_lang = "English"
+                if translated_query.lower() != query.lower():
+                    lang_code = (user_language or "en").split("-")[0].lower()
+                    supported_langs = translation_service.get_supported_languages()
+                    detected_lang = supported_langs.get(lang_code, "Other")
+
                 top = results[0] if results else {}
+                top_details = top.get("details") or {}
+                client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+                if client_ip:
+                    client_ip = client_ip.split(',')[0].strip()
+                geo = {}
+                try:
+                    geo = resolve_ip_location(client_ip)
+                except Exception:
+                    pass
                 _append_prompt_history_entry({
                     "ts": datetime.now(timezone.utc).isoformat(),
                     "query": query,
+                    "translated_query": translated_query,
+                    "was_translated": translated_query.lower() != query.lower(),
+                    "detected_language": detected_lang,
                     "occupation_title": top.get('occupation_title', ''),
                     "nco_code": top.get('nco_2015', top.get('nco_code', '')),
-                    "client_ip": request.remote_addr
+                    "division": top_details.get("division", ""),
+                    "sub_division": top_details.get("sub_division", ""),
+                    "group": top_details.get("group", ""),
+                    "family": top_details.get("family", ""),
+                    "top_k": top_k,
+                    "returned_count": len(results),
+                    "client_ip": client_ip,
+                    "geo_city": geo.get("city", ""),
+                    "geo_state": geo.get("state", ""),
+                    "geo_country": geo.get("country", ""),
                 })
             except Exception:
                 pass
 
-            # Generate contextual suggestion examples
-            suggestion = None
-            if len(results) >= 2:
-                top_score = results[0].get('final_score', 0)
-                next_score = results[1].get('final_score', 0)
-                q_lower = query.lower()
-                # Check if query directly mentions a job title from top results
-                top_title = results[0].get('occupation_title', '').lower()
-                is_direct_job_mention = any(word in top_title for word in q_lower.split()) if top_title else False
-                
-                # Skip suggestions if query directly mentions a job title
-                if not is_direct_job_mention:
-                    # For any ambiguous or low-confidence query, use dynamic prompt generation
-                    if (top_score < 0.6 and abs(top_score - next_score) < 0.05) or top_score < 0.5:
-                        occupation_title = results[0].get('occupation_title', 'professional')
-                        prompts = generate_dynamic_prompts(occupation_title)
-                        suggestion = "Well-defined prompt examples:<br>" + "<br>".join([f"· \"{prompt}\"" for prompt in prompts])
-            return jsonify({"results": results, "suggestion": suggestion})
+            return jsonify({
+                "results": results,
+                "translation_notice": translation_notice,
+                "language_ambiguity": language_ambiguity,
+                "pigs": pigs_output,
+                "top_k": top_k,
+                "returned_count": len(results),
+                "spelling_correction": spelling_correction,
+                "transliteration_notice": {
+                    "original": original_query,
+                    "transliterated": query
+                } if was_transliterated else None
+            })
         else:
             # Use the get_all_jobs function for empty queries
-            results = search_module.get_all_jobs()
-            return jsonify({"results": results})
+            results = search_module.get_all_jobs(filters=filters) if search_module else []
+            return jsonify({
+                "results": results,
+                "directory_mode": True,
+                "returned_count": len(results),
+                "spelling_correction": None
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/suggest', methods=['GET', 'POST'])
+def suggest_completions():
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        query = data.get('query', '').strip()
+    else:
+        query = request.args.get('query', '').strip()
+        
+    if not query or len(query) < 2:
+        return jsonify({"suggestions": []})
+        
+    try:
+        suggestions = db_store.get_spelling_suggestions(query, limit=10)
+        return jsonify({"suggestions": suggestions})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -127,11 +663,24 @@ def translate_text():
         return jsonify({"error": "Text is required"}), 400
     
     try:
+        was_transliterated = False
+        original_text = text
+        
+        # If source_lang is an Indic language and text is in Roman script, transliterate it first
+        if source_lang != "en" and source_lang != "auto":
+            if translation_service.is_roman_script(text):
+                transliterated = translation_service.transliterate(text, source_lang)
+                if transliterated and transliterated.strip() != text.strip():
+                    text = transliterated
+                    was_transliterated = True
+                    
         translated_text = translation_service.translate(
             text, source_lang, target_lang, preferred_service
         )
         return jsonify({
-            "original_text": text,
+            "original_text": original_text,
+            "transliterated_text": text if was_transliterated else None,
+            "was_transliterated": was_transliterated,
             "translated_text": translated_text,
             "source_lang": source_lang,
             "target_lang": target_lang,
@@ -148,21 +697,9 @@ def get_supported_languages():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Admin Dashboard Routes
-@app.route('/admin')
-@app.route('/admin/')
-def admin_dashboard():
-    try:
-        return render_template('admin/dashboard.html')
-    except Exception as e:
-        return f"Template error: {str(e)}", 500
-
-@app.route('/admin/test')
-def admin_test():
-    return "Admin route working!"
-
 
 @app.route('/admin/api/prompt-history', methods=['GET'])
+@admin_api_required
 def get_prompt_history():
     try:
         occupation_title = request.args.get('occupation_title', '').strip()
@@ -170,225 +707,432 @@ def get_prompt_history():
             limit = int(request.args.get('limit', '100'))
         except ValueError:
             limit = 100
-        limit = max(1, min(limit, 500))
+        limit = max(1, min(limit, 5000))
 
-        history = _read_prompt_history()
-        history = list(reversed(history))
-        if occupation_title:
-            history = [h for h in history if h.get('occupation_title') == occupation_title]
-        return jsonify(history[:limit])
+        history = db_store.read_prompt_history(limit=limit, occupation_title=occupation_title)
+        return jsonify(history)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/admin/api/occupations', methods=['GET'])
+@admin_api_required
 def get_occupations():
     try:
-        # Load metadata
-        metadata_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_metadata.json')
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = json.load(f)
-        
-        # Load documents for additional info
-        documents_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_documents.json')
-        with open(documents_path, 'r', encoding='utf-8') as f:
-            documents = json.load(f)
-        
-        # Combine data
+        fieldnames, rows = _load_csv_rows()
         occupations = []
-        for i, meta in enumerate(metadata):
-            if i < len(documents):
-                doc = documents[i]
-                # Parse document to extract hierarchy info
-                lines = doc.split('\n')
-                division = ''
-                family = ''
-                description = ''
-                
-                for line in lines:
-                    if line.startswith('Division:'):
-                        division = line.replace('Division:', '').strip()
-                    elif line.startswith('Family:'):
-                        family = line.replace('Family:', '').strip()
-                    elif line.startswith('Occupation Description:'):
-                        description = line.replace('Occupation Description:', '').strip()
-                
-                occupations.append({
-                    'row_id': meta['row_id'],
-                    'nco_code': meta['nco_2015'],
-                    'occupation_title': meta['occupation_title'],
-                    'division': division,
-                    'family': family,
-                    'description': description
-                })
-        
+        for idx, row in enumerate(rows):
+            occupations.append({
+                "row_id": int(row.get("_row_id") or idx),
+                "id": _safe_text(row.get("S No")),
+                "occupation_title": _safe_text(row.get("Occupational Title")),
+                "nco_code": _normalize_nco_code(row.get("NCO 2015")),
+                "nco_2004_code": _format_nco_2004(row.get("NCO 2004")),
+                "division": _safe_text(row.get("Division")),
+                "sub_division": _safe_text(row.get("Sub Division")),
+                "group": _safe_text(row.get("Group")),
+                "family": _safe_text(row.get("Family")),
+                "division_description": _safe_text(row.get("Division Description")),
+                "sub_division_description": _safe_text(row.get("Sub Division Description")),
+                "group_description": _safe_text(row.get("Group Description")),
+                "family_description": _safe_text(row.get("Family Description")),
+                "description": _safe_text(row.get("Occupation Description")),
+            })
+
         return jsonify(occupations)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/admin/api/occupations/<int:row_id>', methods=['PUT'])
+@admin_api_required
 def update_occupation(row_id):
     try:
         data = request.get_json()
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
-        
-        # Load current metadata
-        metadata_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_metadata.json')
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = json.load(f)
-        
-        # Load current documents
-        documents_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_documents.json')
-        with open(documents_path, 'r', encoding='utf-8') as f:
-            documents = json.load(f)
-        
-        # Find and update the occupation
-        occupation_found = False
-        for i, meta in enumerate(metadata):
-            if meta['row_id'] == row_id:
-                # Update metadata
-                meta['nco_2015'] = data['nco_code']
-                meta['occupation_title'] = data['occupation_title']
-                
-                # Update document if exists
-                if i < len(documents):
-                    doc = documents[i]
-                    lines = doc.split('\n')
-                    
-                    # Update specific lines
-                    for j, line in enumerate(lines):
-                        if line.startswith('Occupation Title:'):
-                            lines[j] = f"Occupation Title: {data['occupation_title']}"
-                        elif line.startswith('NCO 2015 Code:'):
-                            lines[j] = f"NCO 2015 Code: {data['nco_code']}"
-                        elif line.startswith('Division:'):
-                            lines[j] = f"Division: {data['division']}"
-                        elif line.startswith('Family:'):
-                            lines[j] = f"Family: {data['family']}"
-                        elif line.startswith('Occupation Description:'):
-                            lines[j] = f"Occupation Description:\n{data['description']}"
-                    
-                    documents[i] = '\n'.join(lines)
-                
-                occupation_found = True
-                break
-        
-        if not occupation_found:
+
+        fieldnames, rows = _load_csv_rows()
+        existing_row = next((r for r in rows if int(r.get("_row_id") or -1) == row_id), None)
+        if not existing_row:
             return jsonify({"success": False, "error": "Occupation not found"}), 404
-        
-        # Save updated files
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
-        
-        with open(documents_path, 'w', encoding='utf-8') as f:
-            json.dump(documents, f, indent=2, ensure_ascii=False)
-        
+
+        ok, err = _require_admin_password(data.get("admin_password"))
+        if not ok:
+            return jsonify({"success": False, "error": err}), 403
+
+        occupation_title = _safe_text(data.get("occupation_title"))
+        division = _safe_text(data.get("division"))
+        sub_division = _safe_text(data.get("sub_division"))
+        group = _safe_text(data.get("group"))
+        family = _safe_text(data.get("family"))
+        description = _safe_text(data.get("description"))
+
+        if not occupation_title:
+            return jsonify({"success": False, "error": "Occupation title is required"}), 400
+        if not division:
+            return jsonify({"success": False, "error": "Division is required"}), 400
+        if not sub_division:
+            return jsonify({"success": False, "error": "Sub Division is required"}), 400
+        if not group:
+            return jsonify({"success": False, "error": "Group is required"}), 400
+        if not family:
+            return jsonify({"success": False, "error": "Family is required"}), 400
+        if not description:
+            return jsonify({"success": False, "error": "Occupation description is required"}), 400
+
+        new_nco, nco_2015_err = _parse_nco_2015(data.get("nco_code"))
+        if nco_2015_err:
+            return jsonify({"success": False, "error": nco_2015_err}), 400
+
+        existing_nco2004 = _safe_text(existing_row.get("NCO 2004"))
+        incoming_nco2004 = data.get("nco_2004_code", existing_nco2004)
+        required_2004 = bool(existing_nco2004)
+        new_nco_2004, nco_2004_err = _parse_nco_2004(incoming_nco2004, required=required_2004)
+        if nco_2004_err:
+            return jsonify({"success": False, "error": nco_2004_err}), 400
+
+        for r in rows:
+            if int(r.get("_row_id") or -1) == row_id:
+                continue
+            if _normalize_nco_code(r.get("NCO 2015")) == new_nco:
+                return jsonify({
+                    "success": False,
+                    "error": f"NCO 2015 code already exists: {new_nco}"
+                }), 400
+            row_nco_2004 = _safe_text(r.get("NCO 2004"))
+            if new_nco_2004 and row_nco_2004 and row_nco_2004 == new_nco_2004:
+                return jsonify({
+                    "success": False,
+                    "error": f"NCO 2004 code already exists: {new_nco_2004}"
+                }), 400
+
+        row = dict(existing_row)
+        row["Occupational Title"] = occupation_title
+        row["NCO 2015"] = new_nco
+        row["NCO 2004"] = new_nco_2004 if required_2004 else _safe_text(row.get("NCO 2004", ""))
+        row["Division"] = division
+        row["Sub Division"] = sub_division
+        row["Group"] = group
+        row["Family"] = family
+        row["Occupation Description"] = description
+        row["Family Description"] = _safe_text(data.get("family_description", row.get("Family Description", "")))
+        row["Group Description"] = _safe_text(data.get("group_description", row.get("Group Description", "")))
+        row["Division Description"] = _safe_text(data.get("division_description", row.get("Division Description", "")))
+        row["Sub Division Description"] = _safe_text(data.get("sub_division_description", row.get("Sub Division Description", "")))
+
+        db_store.update_occupation(row_id, row)
+        _, rebuilt_rows = _load_csv_rows()
+        _rebuild_search_assets(rebuilt_rows)
+
         return jsonify({"success": True, "message": "Occupation updated successfully"})
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/admin/api/occupations', methods=['POST'])
+@admin_api_required
 def add_occupation():
     try:
         data = request.get_json()
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
-        
-        # Load current metadata
-        metadata_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_metadata.json')
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = json.load(f)
-        
-        # Load current documents
-        documents_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_documents.json')
-        with open(documents_path, 'r', encoding='utf-8') as f:
-            documents = json.load(f)
-        
-        # Generate new row_id
-        new_row_id = max([meta['row_id'] for meta in metadata]) + 1 if metadata else 0
-        
-        # Create new metadata entry
-        new_meta = {
-            "row_id": new_row_id,
-            "nco_2015": data['nco_code'],
-            "occupation_title": data['occupation_title']
+        ok, err = _require_admin_password(data.get("admin_password"))
+        if not ok:
+            return jsonify({"success": False, "error": err}), 403
+
+        fieldnames, rows = _load_csv_rows()
+
+        occupation_title = _safe_text(data.get("occupation_title"))
+        division = _safe_text(data.get("division"))
+        sub_division = _safe_text(data.get("sub_division"))
+        group = _safe_text(data.get("group"))
+        family = _safe_text(data.get("family"))
+        description = _safe_text(data.get("description"))
+
+        if not occupation_title:
+            return jsonify({"success": False, "error": "Occupation title is required"}), 400
+        if not division:
+            return jsonify({"success": False, "error": "Division is required"}), 400
+        if not sub_division:
+            return jsonify({"success": False, "error": "Sub Division is required"}), 400
+        if not group:
+            return jsonify({"success": False, "error": "Group is required"}), 400
+        if not family:
+            return jsonify({"success": False, "error": "Family is required"}), 400
+        if not description:
+            return jsonify({"success": False, "error": "Occupation description is required"}), 400
+
+        new_nco, nco_2015_err = _parse_nco_2015(data.get("nco_code"))
+        if nco_2015_err:
+            return jsonify({"success": False, "error": nco_2015_err}), 400
+
+        new_nco_2004, nco_2004_err = _parse_nco_2004(data.get("nco_2004_code"), required=False)
+        if nco_2004_err:
+            return jsonify({"success": False, "error": nco_2004_err}), 400
+
+        for r in rows:
+            if _normalize_nco_code(r.get("NCO 2015")) == new_nco:
+                return jsonify({
+                    "success": False,
+                    "error": f"NCO 2015 code already exists: {new_nco}"
+                }), 400
+            row_nco_2004 = _safe_text(r.get("NCO 2004"))
+            if new_nco_2004 and row_nco_2004 and row_nco_2004 == new_nco_2004:
+                return jsonify({
+                    "success": False,
+                    "error": f"NCO 2004 code already exists: {new_nco_2004}"
+                }), 400
+
+        new_row = {
+            "S No": db_store.next_s_no(),
+            "Occupational Title": occupation_title,
+            "NCO 2015": new_nco,
+            "NCO 2004": new_nco_2004,
+            "Division": division,
+            "Sub Division": sub_division,
+            "Group": group,
+            "Family": family,
+            "Division Description": _safe_text(data.get("division_description", "")),
+            "Sub Division Description": _safe_text(data.get("sub_division_description", "")),
+            "Group Description": _safe_text(data.get("group_description", "")),
+            "Family Description": _safe_text(data.get("family_description", "")),
+            "Occupation Description": description,
         }
-        metadata.append(new_meta)
-        
-        # Create new document entry
-        new_doc = f"""Occupation Title: {data['occupation_title']}
-NCO 2015 Code: {data['nco_code']}
 
-Hierarchy:
-Division: {data['division']}
-Sub Division: 
-Group: 
-Family: {data['family']}
+        new_row_id = db_store.insert_occupation(new_row)
+        _, rebuilt_rows = _load_csv_rows()
+        _rebuild_search_assets(rebuilt_rows)
 
-Occupation Description:
-{data['description']}
-
-Family Description:
-This family includes closely related job roles centered around {data['family']}, with shared responsibilities, tools, and work objectives.
-
-Group Description:
-This group consists of related occupations that perform similar tasks, share common skill sets, and contribute to organizational functions."""
-        
-        documents.append(new_doc)
-        
-        # Save updated files
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
-        
-        with open(documents_path, 'w', encoding='utf-8') as f:
-            json.dump(documents, f, indent=2, ensure_ascii=False)
-        
         return jsonify({"success": True, "message": "Occupation added successfully", "row_id": new_row_id})
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/admin/api/occupations/<int:row_id>', methods=['DELETE'])
+@admin_api_required
 def delete_occupation(row_id):
     try:
-        # Load current metadata
-        metadata_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_metadata.json')
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = json.load(f)
-        
-        # Load current documents
-        documents_path = os.path.join(os.path.dirname(__file__), 'data', 'processed', 'nco_documents.json')
-        with open(documents_path, 'r', encoding='utf-8') as f:
-            documents = json.load(f)
-        
-        # Find and remove the occupation
-        occupation_found = False
-        new_metadata = []
-        new_documents = []
-        
-        for i, meta in enumerate(metadata):
-            if meta['row_id'] != row_id:
-                new_metadata.append(meta)
-                if i < len(documents):
-                    new_documents.append(documents[i])
-            else:
-                occupation_found = True
-        
-        if not occupation_found:
+        data = request.get_json(silent=True) or {}
+        ok, err = _require_admin_password(data.get("admin_password"))
+        if not ok:
+            return jsonify({"success": False, "error": err}), 403
+
+        fieldnames, rows = _load_csv_rows()
+        if not any(int(r.get("_row_id") or -1) == row_id for r in rows):
             return jsonify({"success": False, "error": "Occupation not found"}), 404
-        
-        # Save updated files
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(new_metadata, f, indent=2, ensure_ascii=False)
-        
-        with open(documents_path, 'w', encoding='utf-8') as f:
-            json.dump(new_documents, f, indent=2, ensure_ascii=False)
-        
+
+        db_store.delete_occupation(row_id)
+        _, rebuilt_rows = _load_csv_rows()
+        _rebuild_search_assets(rebuilt_rows)
+
         return jsonify({"success": True, "message": "Occupation deleted successfully"})
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# Analytics API endpoints
+@app.route('/admin/api/analytics/divisions')
+@admin_api_required
+def analytics_divisions():
+    try:
+        fieldnames, rows = _load_csv_rows()
+        division_counts = {}
+        
+        for row in rows:
+            division = row.get("Division", "")
+            if division:
+                division_counts[division] = division_counts.get(division, 0) + 1
+        
+        # Get top 10 divisions
+        sorted_divisions = sorted(division_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        return jsonify({
+            "labels": [item[0] for item in sorted_divisions],
+            "values": [item[1] for item in sorted_divisions]
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/api/analytics/confidence')
+@admin_api_required
+def analytics_confidence():
+    try:
+        history = db_store.read_prompt_history(limit=5000)
+        confidence_groups = {"High": 0, "Medium": 0, "Low": 0}
+        
+        for entry in history:
+            confidence = entry.get("confidence", 0)
+            if confidence > 85:
+                confidence_groups["High"] += 1
+            elif confidence >= 60:
+                confidence_groups["Medium"] += 1
+            else:
+                confidence_groups["Low"] += 1
+        
+        return jsonify({
+            "labels": list(confidence_groups.keys()),
+            "values": list(confidence_groups.values())
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/api/analytics/top-occupations')
+@admin_api_required
+def analytics_top_occupations():
+    try:
+        history = db_store.read_prompt_history(limit=5000)
+        occupation_counts = {}
+        
+        for entry in history:
+            if entry.get("nco_code"):
+                occupation_counts[entry["nco_code"]] = occupation_counts.get(entry["nco_code"], 0) + 1
+        
+        # Get top 10 occupations
+        sorted_occupations = sorted(occupation_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        return jsonify({
+            "labels": [item[0] for item in sorted_occupations],
+            "values": [item[1] for item in sorted_occupations]
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/api/analytics/search-trend')
+@admin_api_required
+def analytics_search_trend():
+    try:
+        history = db_store.read_prompt_history(limit=5000)
+        # Group by last 7 days
+        from datetime import datetime, timedelta
+        trend_data = {}
+        
+        for i in range(7):
+            date = datetime.now() - timedelta(days=i)
+            date_key = date.strftime("%Y-%m-%d")
+            trend_data[date_key] = 0
+        
+        for entry in history:
+            if "ts" in entry:
+                entry_date = datetime.fromisoformat(entry["ts"].replace('Z', '+00:00'))
+                date_key = entry_date.strftime("%Y-%m-%d")
+                if date_key in trend_data:
+                    trend_data[date_key] += 1
+        
+        # Get last 7 days in order
+        labels = []
+        values = []
+        for i in range(6, -1, -1):
+            date = datetime.now() - timedelta(days=i)
+            date_key = date.strftime("%Y-%m-%d")
+            labels.append(date.strftime("%a"))
+            values.append(trend_data.get(date_key, 0))
+        
+        return jsonify({
+            "labels": labels,
+            "values": values
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/api/analytics/languages')
+@admin_api_required
+def analytics_languages():
+    try:
+        history = db_store.read_prompt_history(limit=5000)
+        language_counts = {}
+        
+        for entry in history:
+            lang = entry.get("detected_language")
+            if not lang:
+                if entry.get("was_translated"):
+                    lang = "Tamil"
+                else:
+                    lang = "English"
+            if lang in ["en", "English"]:
+                lang = "English"
+            language_counts[lang] = language_counts.get(lang, 0) + 1
+        
+        return jsonify({
+            "labels": list(language_counts.keys()),
+            "values": list(language_counts.values())
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/api/analytics/low-confidence')
+@admin_api_required
+def analytics_low_confidence():
+    try:
+        history = db_store.read_prompt_history(limit=5000)
+        low_confidence = []
+        
+        for entry in history:
+            confidence = entry.get("confidence", 0)
+            if confidence < 60:
+                low_confidence.append({
+                    "query": entry.get("query", ""),
+                    "count": 1,
+                    "avg_confidence": confidence
+                })
+        
+        # Group by query and count
+        query_counts = {}
+        for item in low_confidence:
+            query = item["query"]
+            if query not in query_counts:
+                query_counts[query] = {"count": 0, "total_confidence": 0}
+            query_counts[query]["count"] += 1
+            query_counts[query]["total_confidence"] += item["avg_confidence"]
+        
+        # Calculate average confidence and sort
+        result = []
+        for query, data in query_counts.items():
+            avg_conf = data["total_confidence"] / data["count"]
+            result.append({
+                "query": query,
+                "count": data["count"],
+                "avg_confidence": round(avg_conf, 2)
+            })
+        
+        # Sort by count and take top 10
+        result.sort(key=lambda x: x["count"], reverse=True)
+        
+        return jsonify(result[:10])
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/api/analytics/states')
+@admin_api_required
+def analytics_states():
+    """Return aggregated search counts per Indian state for the India map."""
+    try:
+        stats = db_store.get_state_search_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/admin/api/analytics/states/<state_name>')
+@admin_api_required
+def analytics_state_detail(state_name):
+    """Return top occupations and division breakdown for a specific state."""
+    try:
+        stats = db_store.get_state_occupation_stats(state_name)
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/api/analytics/countries')
+@admin_api_required
+def analytics_countries():
+    """Return search counts per country, excluding India."""
+    try:
+        stats = db_store.get_international_search_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    debug_mode = os.getenv("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
+    app.run(debug=debug_mode, port=int(os.getenv("PORT", "5000")), threaded=True)
