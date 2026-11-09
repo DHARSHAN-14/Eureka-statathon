@@ -1,0 +1,79 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions / build artifacts
+*.so
+*.o
+*.a
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment Variables & Secrets (Never commit secrets!)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+
+# Machine Learning Models & Heavy Checkpoints (downloaded locally at runtime)
+models/
+**/models/
+.hf_cache/
+hf_cache/
+**/models/.hf_cache/
+**/models/indictrans2-ct2/
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.h5
+*.tflite
+*.index
+*.npy
+*.npz
+
+# SQLite & local database files
+*.sqlite
+*.sqlite3
+*.db
+data/admin.db
+**/data/admin.db
+
+# Logs and runtime artifacts
+*.log
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and Editor artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# AI agent local settings
+.claude/
+.gemini/
+**/.claude/
+**/.gemini/
+
+# Temporary directories
+.tmp/
+tmp/
+.tmp_pdf_pages/
+**/.tmp_pdf_pages/

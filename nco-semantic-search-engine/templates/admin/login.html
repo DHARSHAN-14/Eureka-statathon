@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | NCO Analytics Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: #f0f4f8;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Government Header ── */
+      .site-header {
+        background: #003366;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      }
+      .header-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 24px;
+        gap: 16px;
+      }
+      .logo-container { display: flex; align-items: center; gap: 14px; }
+      .logo { border-radius: 4px; }
+      .logo-text { display: flex; flex-direction: column; }
+      .main-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 0.2px; }
+      .sub-title { font-size: 12px; color: #c7d6e8; margin-top: 1px; }
+      .tricolor-bar {
+        height: 4px;
+        background: linear-gradient(to right, #FF9933 33.3%, #ffffff 33.3% 66.6%, #138808 66.6%);
+      }
+
+      /* ── Login card ── */
+      .login-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 16px;
+      }
+      .login-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 32px rgba(0,51,102,0.12);
+        padding: 40px 40px 36px;
+        width: 100%;
+        max-width: 420px;
+      }
+      .lock-icon {
+        width: 60px;
+        height: 60px;
+        background: #003366;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 24px;
+        color: #fff;
+      }
+      .login-title {
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 4px;
+      }
+      .login-subtitle {
+        text-align: center;
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 28px;
+      }
+      .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+        display: block;
+      }
+      .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #1f2937;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #fff;
+      }
+      .form-control:focus {
+        border-color: #003366;
+        box-shadow: 0 0 0 3px rgba(0,51,102,0.12);
+      }
+      .password-wrapper {
+        position: relative;
+      }
+      .toggle-pw {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #9ca3af;
+        font-size: 15px;
+        padding: 0;
+        line-height: 1;
+      }
+      .toggle-pw:hover { color: #374151; }
+      .btn-login {
+        width: 100%;
+        padding: 11px;
+        background: #003366;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn-login:hover { background: #00204d; }
+      .btn-login:active { transform: scale(0.98); }
+      .error-msg {
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        color: #dc2626;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .back-link {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 13px;
+        color: #64748b;
+      }
+      .back-link a { color: #003366; text-decoration: none; font-weight: 600; }
+      .back-link a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="tricolor-bar"></div>
+      <div class="header-main">
+        <div class="logo-container">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg"
+               alt="Emblem of India" class="logo" width="44" height="44" loading="lazy" />
+          <div class="logo-text">
+            <span class="main-title">Directorate General of Employment (DGE) | GoI | India</span>
+            <span class="sub-title">Ministry of Labour and Employment &nbsp;|&nbsp; श्रम एवं रोजगार मंत्रालय</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="login-wrapper">
+      <div class="login-card">
+        <div class="lock-icon"><i class="fas fa-lock"></i></div>
+        <div class="login-title">Admin Dashboard</div>
+        <div class="login-subtitle">National Classification of Occupations</div>
+
+        {% if error %}
+        <div class="error-msg">
+          <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/admin/login" autocomplete="off">
+          <div style="margin-bottom: 16px;">
+            <label class="form-label" for="password">Admin Password</label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-control"
+                placeholder="Enter admin password"
+                autocomplete="current-password"
+                required
+                autofocus
+              />
+              <button type="button" class="toggle-pw" onclick="togglePassword()" tabindex="-1">
+                <i class="fas fa-eye" id="pwIcon"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn-login">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </button>
+        </form>
+
+        <div class="back-link">
+          <a href="/"><i class="fas fa-arrow-left"></i> Back to Search</a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function togglePassword() {
+        const input = document.getElementById('password');
+        const icon  = document.getElementById('pwIcon');
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.className = 'fas fa-eye-slash';
+        } else {
+          input.type = 'password';
+          icon.className = 'fas fa-eye';
+        }
+      }
+    </script>
+  </body>
+</html>

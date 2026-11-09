@@ -1,0 +1,21 @@
+numpy>=2.0.0
+flask==3.1.3
+sentence-transformers==5.5.1
+pgvector==0.3.6
+langdetect==1.0.9
+requests==2.34.2
+psycopg2-binary==2.9.12
+flask-cors==6.0.4
+python-dotenv==1.2.2
+flask-compress
+gunicorn
+ai4bharat-transliteration==1.1.3
+# fairseq: pip install git+https://github.com/facebookresearch/fairseq.git@main
+# then: pip install "hydra-core==1.0.7" --no-deps bitarray
+bitarray
+ctranslate2>=4.0
+sentencepiece>=0.1.99
+huggingface_hub>=0.20
+transformers>=4.33.0
+IndicTransToolkit
+pyspellchecker==0.9.0

@@ -1,0 +1,42 @@
+# Environment variables (contains secrets - never commit!)
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary files
+.tmp_pdf_pages/
+tmp/
+.tmp/
+
+# Sensitive
+*.pem
+*.key
+
+# Legacy artifacts & local SQLite
+data/admin.db
+*.sqlite
+*.sqlite3
+*.db
+
+# Pretrained models and caches (download via scripts)
+models/
+.hf_cache/
+*.bin
+*.safetensors
+*.onnx
+*.index
+*.npy
+
+# Logs
+*.log
+
+# AI agent settings
+.claude/
+.gemini/
